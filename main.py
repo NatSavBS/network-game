@@ -2,9 +2,10 @@ import pygame as pyg
 
 campos = (0, 0)
 speed = 30
+holding = 1
 
 class Sprite(pyg.sprite.Sprite):
-    def __init__(self, image, xpos, ypos, groups):
+    def __init__(self, image, xpos, ypos, groups = tuple):
         super().__init__(groups)
         self.xpos, self.ypos = xpos, ypos
         self.draw(image)
@@ -16,8 +17,8 @@ class Sprite(pyg.sprite.Sprite):
         self.rect.y = self.ypos + campos[1]
 
 class endpoint(Sprite):
-    def __init__(self, xpos, ypos, groups = None):
-        self.held = 0
+    def __init__(self, xpos, ypos, groups = tuple):
+        self.held = 1
         image = pyg.Surface((50, 50))
         image.fill("GREEN")
         super().__init__(image, xpos, ypos, groups)
@@ -25,14 +26,18 @@ class endpoint(Sprite):
     def update(self):
         if self.held:
             self.xpos, self.ypos = pyg.mouse.get_pos()
-            self.xpos, self.ypos = self.xpos -(self.rect.width / 2), self.ypos - (self.rect.height / 2)
+            self.xpos, self.ypos = self.xpos -(self.rect.width / 2) - campos[0], self.ypos - (self.rect.height / 2) - campos[1]
         self.draw()
 
     def clicked(self):
+        global holding
         print("clicked")
         if self.held:
-            self.held = 0
-        else: self.held = 1
+            self.held, holding = 0, 0
+        else:
+            if not holding:
+                self.held, holding = 1, 1
+
 
 
 def main():
@@ -41,8 +46,10 @@ def main():
     pyg.init()
     screen = pyg.display.set_mode((0, 0), pyg.FULLSCREEN)
     clock = pyg.time.Clock()
-    endpoints = pyg.sprite.Group()
-    endpoint(400, 400, endpoints)
+    hardware_group = pyg.sprite.Group()
+    endpoint(400, 400, (hardware_group))
+
+    #endpoint(200, 400, (hardware_group))
     while running:
         for event in pyg.event.get():
             #print(event)
@@ -55,14 +62,14 @@ def main():
                 if event.key == pyg.K_d:    campos = (campos[0] - speed, campos[1])
             if event.type == pyg.MOUSEBUTTONDOWN:
                 if event.button == pyg.BUTTON_LEFT:
-                    for X in [X for X in endpoints]:
+                    for X in [X for X in hardware_group]:
                         print(X.rect)
                         print(event.pos)
                         if X.rect.collidepoint(event.pos):
                             X.clicked()
-            endpoints.update()
+            hardware_group.update()
         screen.fill("WHITE")
-        endpoints.draw(screen)
+        hardware_group.draw(screen)
         pyg.display.flip()
         clock.tick(60)
 
