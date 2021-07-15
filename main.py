@@ -43,6 +43,18 @@ class endpoint(Sprite):
         image.fill("GREEN")
         super().__init__(image, groups)
 
+class server(Sprite):
+    def __init__(self, groups = tuple):
+        image = pyg.Surface((70, 100))
+        image.fill("RED")
+        super().__init__(image, groups)
+
+class switch(Sprite):
+    def __init__(self, groups = tuple):
+        image = pyg.Surface((50, 150))
+        image.fill("BLUE")
+        super().__init__(image, groups)
+
 
 
 
@@ -86,6 +98,14 @@ def main():
     image.fill("GREEN")
     menu_button(image, 20, 110, (menu_buttons, clickable), lambda: endpoint((hardware_group, clickable)))
 
+    image = pyg.Surface((70, 100))
+    image.fill("RED")
+    menu_button(image, 20, 180, (menu_buttons, clickable), lambda: server((hardware_group, clickable)))
+
+    image = pyg.Surface((50, 150))
+    image.fill("BLUE")
+    menu_button(image, 20, 300, (menu_buttons, clickable), lambda: switch((hardware_group, clickable)))
+
     while running:
         for event in pyg.event.get():
             #print(event)
@@ -109,7 +129,6 @@ def main():
         hardware_group.draw(screen)
 
         screen.blit(toolbox, toolbox_size)
-        print(toolbox.get_rect())
 
         menu_buttons.draw(screen)
 
