@@ -31,10 +31,14 @@ class endpoint(Sprite):
         self.draw()
 
     def clicked(self):
-        global holding
+        global holding, toolbox_size
         print("clicked"+str(self))
         if self.held:
             self.held, holding = 0, 0
+            toolbox = pyg.rect.Rect(toolbox_size)
+            if self.rect.colliderect(toolbox):
+                print(self.image.get_rect(), toolbox)
+                self.kill()
         else:
             if not holding:
                 self.held, holding = 1, 1
@@ -57,7 +61,7 @@ class menu_button(pyg.sprite.Sprite):
 
 
 def main():
-    global campos, speed
+    global campos, speed, toolbox_size
     running = True
     pyg.init()
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
@@ -71,6 +75,7 @@ def main():
 
     toolbox_size = (0, screen.get_height() / 10, (screen.get_width() / 10) * 2, (screen.get_height() / 10) * 8)
     toolbox = pyg.Surface(toolbox_size[2:], pyg.SRCALPHA)
+
     toolbox.fill(color=(0, 0, 0, 128))
 
     image = pyg.Surface((50, 50))
@@ -99,7 +104,8 @@ def main():
         screen.fill("WHITE")
         hardware_group.draw(screen)
 
-        screen.blit(toolbox, toolbox_size[0:2])
+        screen.blit(toolbox, toolbox_size)
+        print(toolbox.get_rect())
 
         menu_buttons.draw(screen)
 
