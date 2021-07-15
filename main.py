@@ -2,7 +2,7 @@ import pygame as pyg
 
 campos = (0, 0)
 speed = 30
-holding = 1
+holding = 0
 
 class Sprite(pyg.sprite.Sprite):
     def __init__(self, image, xpos, ypos, groups = tuple):
@@ -17,11 +17,12 @@ class Sprite(pyg.sprite.Sprite):
         self.rect.y = self.ypos + campos[1]
 
 class endpoint(Sprite):
-    def __init__(self, xpos, ypos, groups = tuple):
+    def __init__(self, groups = tuple):
+        self.xpos, self.ypos = pyg.mouse.get_pos()
         self.held = 1
         image = pyg.Surface((50, 50))
         image.fill("GREEN")
-        super().__init__(image, xpos, ypos, groups)
+        super().__init__(image, self.xpos, self.ypos, groups)
 
     def update(self):
         if self.held:
@@ -31,12 +32,27 @@ class endpoint(Sprite):
 
     def clicked(self):
         global holding
-        print("clicked")
+        print("clicked"+str(self))
         if self.held:
             self.held, holding = 0, 0
         else:
             if not holding:
                 self.held, holding = 1, 1
+
+class menu_button(pyg.sprite.Sprite):
+    def __init__(self, image, xpos, ypos, group, cmd):
+        super().__init__(group)
+        self.image = image
+        self.rect = image.get_rect()
+        self.rect.x, self.rect.y = xpos, ypos
+        self.cmd = cmd
+
+    def clicked(self):
+        global holding
+        print("clicked" + str(self))
+        if holding == 0:
+            holding = 1
+            self.cmd()
 
 
 
@@ -44,12 +60,23 @@ def main():
     global campos, speed
     running = True
     pyg.init()
-    screen = pyg.display.set_mode((0, 0), pyg.FULLSCREEN)
+    screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
     clock = pyg.time.Clock()
     hardware_group = pyg.sprite.Group()
-    endpoint(400, 400, (hardware_group))
+    menu_buttons = pyg.sprite.Group()
+    clickable = pyg.sprite.Group()
+    #endpoint(400, 400, (hardware_group, clickable))
+    #endpoint(200, 400, (hardware_group, clickable))
 
-    #endpoint(200, 400, (hardware_group))
+
+    toolbox_size = (0, screen.get_height() / 10, (screen.get_width() / 10) * 2, (screen.get_height() / 10) * 8)
+    toolbox = pyg.Surface(toolbox_size[2:], pyg.SRCALPHA)
+    toolbox.fill(color=(0, 0, 0, 128))
+
+    image = pyg.Surface((50, 50))
+    image.fill("GREEN")
+    menu_button(image, 20, 110, (menu_buttons, clickable), lambda: endpoint((hardware_group, clickable)))
+
     while running:
         for event in pyg.event.get():
             #print(event)
@@ -60,9 +87,10 @@ def main():
                 if event.key == pyg.K_a:    campos = (campos[0] + speed, campos[1])
                 if event.key == pyg.K_s:    campos = (campos[0], campos[1] - speed)
                 if event.key == pyg.K_d:    campos = (campos[0] - speed, campos[1])
+                if event.key == pyg.K_ESCAPE: running = False
             if event.type == pyg.MOUSEBUTTONDOWN:
                 if event.button == pyg.BUTTON_LEFT:
-                    for X in [X for X in hardware_group]:
+                    for X in [X for X in clickable]:
                         print(X.rect)
                         print(event.pos)
                         if X.rect.collidepoint(event.pos):
@@ -70,6 +98,11 @@ def main():
             hardware_group.update()
         screen.fill("WHITE")
         hardware_group.draw(screen)
+
+        screen.blit(toolbox, toolbox_size[0:2])
+
+        menu_buttons.draw(screen)
+
         pyg.display.flip()
         clock.tick(60)
 
