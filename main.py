@@ -5,30 +5,18 @@ speed = 30
 holding = 0
 
 class Sprite(pyg.sprite.Sprite):
-    def __init__(self, image, xpos, ypos, groups = tuple):
+    def __init__(self, image, groups = tuple):
+        self.xpos, self.ypos = pyg.mouse.get_pos()
+        self.held = 1
         super().__init__(groups)
-        self.xpos, self.ypos = xpos, ypos
         self.draw(image)
+
     def draw(self, image = None):
         if image:
             self.image = image
             self.rect = self.image.get_rect()
         self.rect.x = self.xpos + campos[0]
         self.rect.y = self.ypos + campos[1]
-
-class endpoint(Sprite):
-    def __init__(self, groups = tuple):
-        self.xpos, self.ypos = pyg.mouse.get_pos()
-        self.held = 1
-        image = pyg.Surface((50, 50))
-        image.fill("GREEN")
-        super().__init__(image, self.xpos, self.ypos, groups)
-
-    def update(self):
-        if self.held:
-            self.xpos, self.ypos = pyg.mouse.get_pos()
-            self.xpos, self.ypos = self.xpos -(self.rect.width / 2) - campos[0], self.ypos - (self.rect.height / 2) - campos[1]
-        self.draw()
 
     def clicked(self):
         global holding, toolbox_size
@@ -42,6 +30,22 @@ class endpoint(Sprite):
         else:
             if not holding:
                 self.held, holding = 1, 1
+
+    def update(self):
+        if self.held:
+            self.xpos, self.ypos = pyg.mouse.get_pos()
+            self.xpos, self.ypos = self.xpos -(self.rect.width / 2) - campos[0], self.ypos - (self.rect.height / 2) - campos[1]
+        self.draw()
+
+class endpoint(Sprite):
+    def __init__(self, groups = tuple):
+        image = pyg.Surface((50, 50))
+        image.fill("GREEN")
+        super().__init__(image, groups)
+
+
+
+
 
 class menu_button(pyg.sprite.Sprite):
     def __init__(self, image, xpos, ypos, group, cmd):
