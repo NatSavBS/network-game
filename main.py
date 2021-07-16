@@ -1,6 +1,6 @@
 import pygame as pyg
 
-campos = (0, 0)
+campos = [0, 0]
 speed = 30
 holding = 0
 
@@ -20,12 +20,10 @@ class Sprite(pyg.sprite.Sprite):
 
     def clicked(self):
         global holding, toolbox_size
-        print("clicked"+str(self))
         if self.held:
             self.held, holding = 0, 0
             toolbox = pyg.rect.Rect(toolbox_size)
             if self.rect.colliderect(toolbox):
-                print(self.image.get_rect(), toolbox)
                 self.kill()
         else:
             if not holding:
@@ -69,7 +67,6 @@ class menu_button(pyg.sprite.Sprite):
 
     def clicked(self):
         global holding
-        print("clicked" + str(self))
         if holding == 0:
             holding = 1
             self.cmd()
@@ -79,14 +76,13 @@ class menu_button(pyg.sprite.Sprite):
 def main():
     global campos, speed, toolbox_size
     running = True
+    dragging = False
     pyg.init()
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
     clock = pyg.time.Clock()
     hardware_group = pyg.sprite.Group()
     menu_buttons = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
-    #endpoint(400, 400, (hardware_group, clickable))
-    #endpoint(200, 400, (hardware_group, clickable))
 
 
     toolbox_size = (0, screen.get_height() / 10, (screen.get_width() / 10) * 2, (screen.get_height() / 10) * 8)
@@ -112,26 +108,33 @@ def main():
             if event.type == pyg.QUIT:
                 running = False
             if event.type == pyg.KEYDOWN:
-                if event.key == pyg.K_w:    campos = (campos[0], campos[1] + speed)
-                if event.key == pyg.K_a:    campos = (campos[0] + speed, campos[1])
-                if event.key == pyg.K_s:    campos = (campos[0], campos[1] - speed)
-                if event.key == pyg.K_d:    campos = (campos[0] - speed, campos[1])
+                if event.key == pyg.K_w:    campos = [campos[0], campos[1] + speed]
+                if event.key == pyg.K_a:    campos = [campos[0] + speed, campos[1]]
+                if event.key == pyg.K_s:    campos = [campos[0], campos[1] - speed]
+                if event.key == pyg.K_d:    campos = [campos[0] - speed, campos[1]]
                 if event.key == pyg.K_ESCAPE: running = False
             if event.type == pyg.MOUSEBUTTONDOWN:
                 if event.button == pyg.BUTTON_LEFT:
+                    
                     for X in [X for X in clickable]:
-                        print(X.rect)
-                        print(event.pos)
                         if X.rect.collidepoint(event.pos):
                             X.clicked()
+                            break
+                    else:
+                        dragging = True
+                        drag_cords = (pyg.mouse.get_pos(), campos.copy())
+            if event.type == pyg.MOUSEBUTTONUP:
+                if event.button == pyg.BUTTON_LEFT:
+                    dragging = False
             hardware_group.update()
+        if dragging:
+            campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
+            campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
+            #print("dragging", campos)
         screen.fill("WHITE")
         hardware_group.draw(screen)
-
         screen.blit(toolbox, toolbox_size)
-
         menu_buttons.draw(screen)
-
         pyg.display.flip()
         clock.tick(60)
 
