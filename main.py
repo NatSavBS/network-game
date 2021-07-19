@@ -55,16 +55,30 @@ class Switch(Sprite):  # class for switch devices
 class Nic(pyg.sprite.Sprite): # class for NIC's
     def __init__(self, parent, x_off, y_off):
         self.image = pyg.image.load("NIC.png")
-        self.parent, self.x_off, self.y_off = parent, x_off, y_off
+        self.parent, self.x_off, self.y_off, self.held = parent, x_off, y_off, False
         super().__init__(NICs)
         self.rect = self.image.get_rect()
 
     def update(self):
         self.rect.x = self.parent.xpos + self.x_off + campos[0]
         self.rect.y = self.parent.ypos + self.y_off + campos[1]
+        if self.held:
+            pyg.draw.line(screen, (0, 0, 0), (self.rect.x + 5, self.rect.y + 5), pyg.mouse.get_pos(), 3)
 
     def clicked(self):
-        print("NIC clicked")
+        global holding, connections
+        print("clicked")
+        if holding:
+            print("stop")
+            holding = False
+            remote_nic = [X for X in NICs if X.held]
+            remote_nic[0].held = False
+            connections.append([self, remote_nic[0]])
+        else:
+            print("start")
+            self.held, holding = True, True
+
+
 
 
 class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
@@ -84,9 +98,11 @@ class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
 
 
 def main():
-    global campos, speed, toolbox_size
+    global campos, speed, toolbox_size, connections
     running = True
     dragging = False
+    drag_cords = [[0, 0], [0, 0]]
+    connections = []
 
     # create the toolbox surface
     toolbox_size = (0, screen.get_height() / 10, (screen.get_width() / 10) * 2, (screen.get_height() / 10) * 8)
@@ -105,6 +121,8 @@ def main():
     MenuButton(image, 20, 300, (menu_buttons, clickable), lambda: Switch((hardware_group, clickable)))
 
     while running:
+
+
         for event in pyg.event.get():  # For Every Event
             if event.type == pyg.QUIT:  # Break on quit button
                 running = False
@@ -116,7 +134,7 @@ def main():
                 if event.key == pyg.K_ESCAPE: running = False  # Break on esc
             if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
                 if event.button == pyg.BUTTON_LEFT:  # if the left button was pressed
-                    for X in [X for X in NICs] + [X for X in clickable]:  # for everything in the clickable group
+                    for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and everything in the clickable group
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             X.clicked()  # call the clicked function
                             break  # stop looking for collisions
@@ -128,14 +146,18 @@ def main():
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                     dragging = False  # stop dragging the canvas
             hardware_group.update()  # redraw the hardware assets (probably have moved)
-            NICs.update()
+
+
         if dragging:  # if dragging the canvas, move the camera with the mouse
             campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
             campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
         screen.fill("WHITE")  # blank the screen
+        NICs.update()  # update the NIC's (move with the hardware)
         hardware_group.draw(screen)  # draw the hardware
-        NICs.draw(screen)  # draw the NIC's (need to do seperately to ensure they afe drawn over the hardware)
+        NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
         screen.blit(toolbox, toolbox_size)  # draw te toolbox
+        for X in connections:
+            pyg.draw.line(screen, (0, 0, 0), (X[0].rect.x + 5, X[0].rect.y + 5), (X[1].rect.x + 5, X[1].rect.y + 5), 3)
         menu_buttons.draw(screen)  # draw the menu buttons
         pyg.display.flip()  # flip the screen buffer
         clock.tick(60)  # wait 1/60th of a second from the last time a frame was drawn
@@ -144,7 +166,7 @@ def main():
 if __name__ == "__main__":
     campos = [0, 0]
     speed = 30
-    holding = 0
+    holding = 0  # Holding refers to holding a sprite or "holding the end of a diagram line"
     pyg.init()
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
     clock = pyg.time.Clock()
