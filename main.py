@@ -41,6 +41,7 @@ class Sprite(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
 class Endpoint(Sprite):  # class for endpoint devices
     def __init__(self, groups=tuple):
         image = pyg.image.load("endpoint.png")
+        Nic(self, -5, 20)
         super().__init__(image, groups)
 
 
@@ -54,6 +55,18 @@ class Switch(Sprite):  # class for switch devices
     def __init__(self, groups=tuple):
         image = pyg.image.load("switch.png")
         super().__init__(image, groups)
+
+
+class Nic(pyg.sprite.Sprite): # class for NIC's
+    def __init__(self, parent, x_off, y_off):
+        self.image = pyg.image.load("NIC.png")
+        self.parent, self.x_off, self.y_off = parent, x_off, y_off
+        super().__init__(NICs)
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.rect.x = self.parent.xpos + self.x_off
+        self.rect.y = self.parent.ypos + self.y_off
 
 
 class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
@@ -76,12 +89,6 @@ def main():
     global campos, speed, toolbox_size
     running = True
     dragging = False
-    pyg.init()
-    screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
-    clock = pyg.time.Clock()
-    hardware_group = pyg.sprite.Group()
-    menu_buttons = pyg.sprite.Group()
-    clickable = pyg.sprite.Group()
 
     # create the toolbox surface
     toolbox_size = (0, screen.get_height() / 10, (screen.get_width() / 10) * 2, (screen.get_height() / 10) * 8)
@@ -122,11 +129,13 @@ def main():
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                     dragging = False  # stop dragging the canvas
             hardware_group.update()  # redraw the hardware assets (probably have moved)
+            NICs.update()
         if dragging:  # if dragging the canvas, move the camera with the mouse
             campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
             campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
         screen.fill("WHITE")  # blank the screen
         hardware_group.draw(screen)  # draw the hardware
+        NICs.draw(screen)
         screen.blit(toolbox, toolbox_size)  # draw te toolbox
         menu_buttons.draw(screen)  # draw the menu buttons
         pyg.display.flip()  # flip the screen buffer
@@ -134,4 +143,11 @@ def main():
 
 
 if __name__ == "__main__":
+    pyg.init()
+    screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
+    clock = pyg.time.Clock()
+    hardware_group = pyg.sprite.Group()
+    menu_buttons = pyg.sprite.Group()
+    clickable = pyg.sprite.Group()
+    NICs = pyg.sprite.Group()
     main()
