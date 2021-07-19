@@ -58,6 +58,23 @@ class Switch(Sprite):  # class for switch devices
         super().__init__(image, groups)
 
 
+class Firewall(Sprite):  # class for firewalls
+    def __init__(self, groups=tuple):
+        image = pyg.Surface((70, 30))
+        image.fill("PURPLE")
+        for X in [[9, -5], [23, -5], [37, -5], [51, -5], [30, 25]]:
+            Nic(self, X[0], X[1])
+        super().__init__(image, groups)
+
+
+class Router(Sprite):  # class for firewalls
+    def __init__(self, groups=tuple):
+        image = pyg.Surface((30, 30))
+        image.fill("CYAN")
+        Nic(self, 10, -5)
+        super().__init__(image, groups)
+
+
 class Nic(pyg.sprite.Sprite):  # class for NIC's
     def __init__(self, parent, x_off, y_off):
         self.image = pyg.image.load("NIC.png")
@@ -70,6 +87,8 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
         self.rect.y = self.parent.ypos + self.y_off + campos[1]
         if self.held:
             pyg.draw.line(screen, (0, 0, 0), (self.rect.x + 5, self.rect.y + 5), pyg.mouse.get_pos(), 3)
+        if not hardware_group.has(self.parent):
+            self.kill()
 
     def clicked(self):
         global holding, connections
@@ -128,6 +147,14 @@ def main():
 
     image = pyg.image.load("switch.png")
     MenuButton(image, 20, 300, (menu_buttons, clickable), lambda: Switch((hardware_group, clickable)))
+
+    image = pyg.Surface((70, 30))
+    image.fill("PURPLE")
+    MenuButton(image, 20, 420, (menu_buttons, clickable), lambda: Firewall((hardware_group, clickable)))
+
+    image = pyg.Surface((30, 30))
+    image.fill("CYAN")
+    MenuButton(image, 20, 470, (menu_buttons, clickable), lambda: Router((hardware_group, clickable)))
 
     while running:
 
