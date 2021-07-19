@@ -1,5 +1,6 @@
 import pygame as pyg
 
+
 class Sprite(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
     def __init__(self, image, groups=tuple):
         self.xpos, self.ypos = pyg.mouse.get_pos()
@@ -43,16 +44,21 @@ class Endpoint(Sprite):  # class for endpoint devices
 class Server(Sprite):  # class for server devices
     def __init__(self, groups=tuple):
         image = pyg.image.load("server.png")
+        for X in [[-5, 35], [-5, 65], [65, 35], [65, 65]]:
+            Nic(self, X[0], X[1])
         super().__init__(image, groups)
 
 
 class Switch(Sprite):  # class for switch devices
     def __init__(self, groups=tuple):
         image = pyg.image.load("switch.png")
+        for X in [4, 16]:
+            for Y in [15, 25, 35, 45, 55, 65, 75, 85]:
+                Nic(self, X, Y)
         super().__init__(image, groups)
 
 
-class Nic(pyg.sprite.Sprite): # class for NIC's
+class Nic(pyg.sprite.Sprite):  # class for NIC's
     def __init__(self, parent, x_off, y_off):
         self.image = pyg.image.load("NIC.png")
         self.parent, self.x_off, self.y_off, self.held = parent, x_off, y_off, False
@@ -67,18 +73,21 @@ class Nic(pyg.sprite.Sprite): # class for NIC's
 
     def clicked(self):
         global holding, connections
-        print("clicked")
         if holding:
-            print("stop")
             holding = False
+            for X in connections:
+                if X[0] == self or X[1] == self:
+                    connections.remove(X)
+                    break
             remote_nic = [X for X in NICs if X.held]
             remote_nic[0].held = False
             connections.append([self, remote_nic[0]])
         else:
-            print("start")
+            for X in connections:
+                if X[0] == self or X[1] == self:
+                    connections.remove(X)
+                    break
             self.held, holding = True, True
-
-
 
 
 class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
@@ -122,7 +131,6 @@ def main():
 
     while running:
 
-
         for event in pyg.event.get():  # For Every Event
             if event.type == pyg.QUIT:  # Break on quit button
                 running = False
@@ -134,7 +142,8 @@ def main():
                 if event.key == pyg.K_ESCAPE: running = False  # Break on esc
             if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
                 if event.button == pyg.BUTTON_LEFT:  # if the left button was pressed
-                    for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and everything in the clickable group
+                    for X in [X for X in NICs] + [X for X in
+                                                  clickable]:  # for the nics and everything in the clickable group
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             X.clicked()  # call the clicked function
                             break  # stop looking for collisions
@@ -146,7 +155,6 @@ def main():
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                     dragging = False  # stop dragging the canvas
             hardware_group.update()  # redraw the hardware assets (probably have moved)
-
 
         if dragging:  # if dragging the canvas, move the camera with the mouse
             campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
@@ -173,5 +181,5 @@ if __name__ == "__main__":
     hardware_group = pyg.sprite.Group()
     menu_buttons = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
-    NICs = pyg.sprite.Group() #  Nics need a seperate group to ensure they get click and draw z priority
+    NICs = pyg.sprite.Group()  # Nics need a seperate group to ensure they get click and draw z priority
     main()
