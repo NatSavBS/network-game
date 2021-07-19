@@ -1,10 +1,5 @@
 import pygame as pyg
 
-campos = [0, 0]
-speed = 30
-holding = 0
-
-
 class Sprite(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
     def __init__(self, image, groups=tuple):
         self.xpos, self.ypos = pyg.mouse.get_pos()
@@ -65,8 +60,11 @@ class Nic(pyg.sprite.Sprite): # class for NIC's
         self.rect = self.image.get_rect()
 
     def update(self):
-        self.rect.x = self.parent.xpos + self.x_off
-        self.rect.y = self.parent.ypos + self.y_off
+        self.rect.x = self.parent.xpos + self.x_off + campos[0]
+        self.rect.y = self.parent.ypos + self.y_off + campos[1]
+
+    def clicked(self):
+        print("NIC clicked")
 
 
 class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
@@ -118,13 +116,14 @@ def main():
                 if event.key == pyg.K_ESCAPE: running = False  # Break on esc
             if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
                 if event.button == pyg.BUTTON_LEFT:  # if the left button was pressed
-                    for X in [X for X in clickable]:  # for everything in the clickable group
+                    for X in [X for X in NICs] + [X for X in clickable]:  # for everything in the clickable group
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             X.clicked()  # call the clicked function
                             break  # stop looking for collisions
                     else:  # if nothing was clicked
                         dragging = True  # start dragging the canvas
                         drag_cords = (pyg.mouse.get_pos(), campos.copy())
+
             if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                     dragging = False  # stop dragging the canvas
@@ -135,7 +134,7 @@ def main():
             campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
         screen.fill("WHITE")  # blank the screen
         hardware_group.draw(screen)  # draw the hardware
-        NICs.draw(screen)
+        NICs.draw(screen)  # draw the NIC's (need to do seperately to ensure they afe drawn over the hardware)
         screen.blit(toolbox, toolbox_size)  # draw te toolbox
         menu_buttons.draw(screen)  # draw the menu buttons
         pyg.display.flip()  # flip the screen buffer
@@ -143,11 +142,14 @@ def main():
 
 
 if __name__ == "__main__":
+    campos = [0, 0]
+    speed = 30
+    holding = 0
     pyg.init()
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
     clock = pyg.time.Clock()
     hardware_group = pyg.sprite.Group()
     menu_buttons = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
-    NICs = pyg.sprite.Group()
+    NICs = pyg.sprite.Group() #  Nics need a seperate group to ensure they get click and draw z priority
     main()
