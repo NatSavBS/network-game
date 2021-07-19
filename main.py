@@ -40,22 +40,19 @@ class Sprite(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
 
 class Endpoint(Sprite):  # class for endpoint devices
     def __init__(self, groups=tuple):
-        image = pyg.Surface((50, 50))
-        image.fill("GREEN")
+        image = pyg.image.load("endpoint.png")
         super().__init__(image, groups)
 
 
 class Server(Sprite):  # class for server devices
     def __init__(self, groups=tuple):
-        image = pyg.Surface((70, 100))
-        image.fill("RED")
+        image = pyg.image.load("server.png")
         super().__init__(image, groups)
 
 
 class Switch(Sprite):  # class for switch devices
     def __init__(self, groups=tuple):
-        image = pyg.Surface((50, 150))
-        image.fill("BLUE")
+        image = pyg.image.load("switch.png")
         super().__init__(image, groups)
 
 
@@ -92,16 +89,14 @@ def main():
 
     toolbox.fill(color=(0, 0, 0, 128))  # colour the toolbox surface
 
-    image = pyg.Surface((50, 50))  # create menu buttons for endpoint server and switch
-    image.fill("GREEN")
+    # create menu buttons for endpoint server and switch
+    image = pyg.image.load("endpoint.png")
     MenuButton(image, 20, 110, (menu_buttons, clickable), lambda: Endpoint((hardware_group, clickable)))
 
-    image = pyg.Surface((70, 100))
-    image.fill("RED")
+    image = pyg.image.load("server.png")
     MenuButton(image, 20, 180, (menu_buttons, clickable), lambda: Server((hardware_group, clickable)))
 
-    image = pyg.Surface((50, 150))
-    image.fill("BLUE")
+    image = pyg.image.load("switch.png")
     MenuButton(image, 20, 300, (menu_buttons, clickable), lambda: Switch((hardware_group, clickable)))
 
     while running:
@@ -126,7 +121,7 @@ def main():
             if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                     dragging = False  # stop dragging the canvas
-            hardware_group.update()  # redraw the hardware assets (probably ave moved)
+            hardware_group.update()  # redraw the hardware assets (probably have moved)
         if dragging:  # if dragging the canvas, move the camera with the mouse
             campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
             campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
