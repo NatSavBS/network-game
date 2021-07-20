@@ -1,7 +1,7 @@
 import pygame as pyg
 
 
-class Sprite(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
+class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
     def __init__(self, image, groups=tuple):
         self.xpos, self.ypos = pyg.mouse.get_pos()
         self.held = 1
@@ -22,6 +22,7 @@ class Sprite(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
             toolbox = pyg.rect.Rect(toolbox_size)
             if self.rect.colliderect(toolbox):
                 self.kill()
+                del self
         else:
             if not holding:
                 self.held, holding = 1, 1
@@ -34,14 +35,14 @@ class Sprite(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
         self.draw()
 
 
-class Endpoint(Sprite):  # class for endpoint devices
+class Endpoint(Hardware):  # class for endpoint devices
     def __init__(self, groups=tuple):
         image = pyg.image.load("endpoint.png")
         Nic(self, -5, 20)
         super().__init__(image, groups)
 
 
-class Server(Sprite):  # class for server devices
+class Server(Hardware):  # class for server devices
     def __init__(self, groups=tuple):
         image = pyg.image.load("server.png")
         for X in [[-5, 35], [-5, 65], [65, 35], [65, 65]]:
@@ -49,7 +50,7 @@ class Server(Sprite):  # class for server devices
         super().__init__(image, groups)
 
 
-class Switch(Sprite):  # class for switch devices
+class Switch(Hardware):  # class for switch devices
     def __init__(self, groups=tuple):
         image = pyg.image.load("switch.png")
         for X in [4, 16]:
@@ -58,7 +59,7 @@ class Switch(Sprite):  # class for switch devices
         super().__init__(image, groups)
 
 
-class Firewall(Sprite):  # class for firewalls
+class Firewall(Hardware):  # class for firewalls
     def __init__(self, groups=tuple):
         image = pyg.Surface((70, 30))
         image.fill("PURPLE")
@@ -67,7 +68,7 @@ class Firewall(Sprite):  # class for firewalls
         super().__init__(image, groups)
 
 
-class Router(Sprite):  # class for firewalls
+class Router(Hardware):  # class for firewalls
     def __init__(self, groups=tuple):
         image = pyg.Surface((30, 30))
         image.fill("CYAN")
@@ -89,6 +90,10 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
             pyg.draw.line(screen, (0, 0, 0), (self.rect.x + 5, self.rect.y + 5), pyg.mouse.get_pos(), 3)
         if not hardware_group.has(self.parent):
             self.kill()
+            for X in connections:
+                if X[0] == self or X[1] == self:
+                    connections.remove(X)
+            del self
 
     def clicked(self):
         global holding, connections
@@ -169,20 +174,20 @@ def main():
                 if event.key == pyg.K_ESCAPE: running = False  # Break on esc
             if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
                 if event.button == pyg.BUTTON_LEFT:  # if the left button was pressed
-                    for X in [X for X in NICs] + [X for X in
-                                                  clickable]:  # for the nics and everything in the clickable group
+                    for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and everything in the clickable group
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             X.clicked()  # call the clicked function
                             break  # stop looking for collisions
                     else:  # if nothing was clicked
                         dragging = True  # start dragging the canvas
                         drag_cords = (pyg.mouse.get_pos(), campos.copy())
-
+                if event.button == pyg.BUTTON_RIGHT:  # if the right mouse button was pressed
+                    try: [X for X in NICs if X.held == True][0].held = False  # if holding a wire, stop
+                    except IndexError: pass  # dont crash if not holding a wire
             if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                     dragging = False  # stop dragging the canvas
             hardware_group.update()  # redraw the hardware assets (probably have moved)
-
         if dragging:  # if dragging the canvas, move the camera with the mouse
             campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
             campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
@@ -191,7 +196,7 @@ def main():
         hardware_group.draw(screen)  # draw the hardware
         NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
         screen.blit(toolbox, toolbox_size)  # draw te toolbox
-        for X in connections:
+        for X in connections:  # draw the connection lines
             pyg.draw.line(screen, (0, 0, 0), (X[0].rect.x + 5, X[0].rect.y + 5), (X[1].rect.x + 5, X[1].rect.y + 5), 3)
         menu_buttons.draw(screen)  # draw the menu buttons
         pyg.display.flip()  # flip the screen buffer
@@ -208,5 +213,5 @@ if __name__ == "__main__":
     hardware_group = pyg.sprite.Group()
     menu_buttons = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
-    NICs = pyg.sprite.Group()  # Nics need a seperate group to ensure they get click and draw z priority
+    NICs = pyg.sprite.Group()  # nics need a seperate group to ensure they get click and draw z priority
     main()
