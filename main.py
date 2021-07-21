@@ -125,13 +125,13 @@ class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
     # if menu button is clicked, check to see if holding anything before calling cmd (spawn hardware)
     def clicked(self):
         global holding
-        if holding == 0:
-            holding = 1
+        if not holding:
+            holding = True
             self.cmd()
 
 
 def main():
-    global campos, speed, toolbox_size, connections
+    global campos, speed, toolbox_size, connections, holding
     running = True
     dragging = False
     drag_cords = [[0, 0], [0, 0]]
@@ -174,7 +174,7 @@ def main():
                 if event.key == pyg.K_ESCAPE: running = False  # Break on esc
             if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
                 if event.button == pyg.BUTTON_LEFT:  # if the left button was pressed
-                    for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and everything in the clickable group
+                    for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and the clickable group
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             X.clicked()  # call the clicked function
                             break  # stop looking for collisions
@@ -182,7 +182,9 @@ def main():
                         dragging = True  # start dragging the canvas
                         drag_cords = (pyg.mouse.get_pos(), campos.copy())
                 if event.button == pyg.BUTTON_RIGHT:  # if the right mouse button was pressed
-                    try: [X for X in NICs if X.held == True][0].held = False  # if holding a wire, stop
+                    try:
+                        [X for X in NICs if X.held == True][0].held = False  # if holding a wire, stop
+                        holding = False
                     except IndexError: pass  # dont crash if not holding a wire
             if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
@@ -191,13 +193,15 @@ def main():
         if dragging:  # if dragging the canvas, move the camera with the mouse
             campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
             campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
+
+
         screen.fill("WHITE")  # blank the screen
         NICs.update()  # update the NIC's (move with the hardware)
+        for X in connections:  # draw the connection lines
+            pyg.draw.line(screen, (0, 0, 0), (X[0].rect.x + 5, X[0].rect.y + 5), (X[1].rect.x + 5, X[1].rect.y + 5), 3)
         hardware_group.draw(screen)  # draw the hardware
         NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
         screen.blit(toolbox, toolbox_size)  # draw te toolbox
-        for X in connections:  # draw the connection lines
-            pyg.draw.line(screen, (0, 0, 0), (X[0].rect.x + 5, X[0].rect.y + 5), (X[1].rect.x + 5, X[1].rect.y + 5), 3)
         menu_buttons.draw(screen)  # draw the menu buttons
         pyg.display.flip()  # flip the screen buffer
         clock.tick(60)  # wait 1/60th of a second from the last time a frame was drawn
