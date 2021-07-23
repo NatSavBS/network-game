@@ -4,7 +4,7 @@ import pygame as pyg
 class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
     def __init__(self, image, groups):
         self.xpos, self.ypos = pyg.mouse.get_pos()
-        self.held = 1
+        self.active = 1
         super().__init__(groups)
         self.draw(image)
 
@@ -18,18 +18,18 @@ class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the scree
     def physical_click(self):  # if clicked, check to see if should be held or dropped, if dropped onto toolbox, remove
         global toolbox_size
         print(type(self).__name__)
-        if self.held:
-            self.held = 0
+        if self.active:
+            self.active = 0
             toolbox = pyg.rect.Rect(toolbox_size)
             if self.rect.colliderect(toolbox):
                 self.kill()
                 del self
         else:
             if not holding():
-                self.held = 1
+                self.active = 1
 
     def update(self):  # if held, reposition and then draw itself
-        if self.held:
+        if self.active:
             self.xpos, self.ypos = pyg.mouse.get_pos()
             self.xpos, self.ypos = self.xpos - (self.rect.width / 2) - campos[0], \
                                    self.ypos - (self.rect.height / 2) - campos[1]
@@ -80,14 +80,14 @@ class Router(Hardware):  # class for firewalls
 class Nic(pyg.sprite.Sprite):  # class for NIC's
     def __init__(self, parent, x_off, y_off, type="physical"):
         self.image = pyg.image.load("NIC.png")
-        self.parent, self.x_off, self.y_off, self.held, self.type = parent, x_off, y_off, False, type
+        self.parent, self.x_off, self.y_off, self.active, self.type = parent, x_off, y_off, False, type
         super().__init__(NICs)
         self.rect = self.image.get_rect()
 
     def update(self):
         self.rect.x = self.parent.xpos + self.x_off + campos[0]
         self.rect.y = self.parent.ypos + self.y_off + campos[1]
-        if self.held:
+        if self.active:
             pyg.draw.line(screen, (0, 0, 0), (self.rect.x + 5, self.rect.y + 5), pyg.mouse.get_pos(), 3)
         if not hardware_group.has(self.parent):
             self.kill()
@@ -104,20 +104,20 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
                 if X[0] == self or X[1] == self:
                     connections.remove(X)
                     break
-            remote_nic = [X for X in NICs if X.held]
-            remote_nic[0].held = False
+            remote_nic = [X for X in NICs if X.active]
+            remote_nic[0].active = False
             connections.append([self, remote_nic[0]])
         else:
             for X in connections:
                 if X[0] == self or X[1] == self:
                     connections.remove(X)
                     break
-            self.held = True
+            self.active = True
 
 
 class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
     def __init__(self, image, xpos, ypos, group, cmd):
-        self.held = 0  # needed for compatability
+        self.active = 0  # needed for compatability
         super().__init__(group)
         self.image = image
         self.rect = image.get_rect()
@@ -137,11 +137,13 @@ def draw():
         pyg.draw.line(screen, (0, 0, 0), (X[0].rect.x + 5, X[0].rect.y + 5), (X[1].rect.x + 5, X[1].rect.y + 5), 3)
     hardware_group.draw(screen)  # draw the hardware
     NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
+    screen.blit(toolbox, toolbox_size)  # draw te toolbox
     if state == "physical":
-        screen.blit(toolbox, toolbox_size)  # draw te toolbox
         menu_buttons.draw(screen)  # draw the menu buttons
-        for X in [X for X in NICs if X.held]:
+        for X in [X for X in NICs if X.active]:
             pyg.draw.line(screen, (0, 0, 0), (X.rect.x + 5, X.rect.y + 5), pyg.mouse.get_pos(), 3)
+    if state == "logical":
+        pass # TODO
     screen.blit(state_button, state_button_size)
     pyg.display.flip()  # flip the screen buffer
     clock.tick(60)  # wait 1/60th of a second from the last time a frame was drawn
@@ -181,6 +183,7 @@ def main():
     MenuButton(image, 20, 470, (menu_buttons, clickable), lambda: Router((hardware_group, clickable)))
 
     while running:
+        toolbox.fill(color=(0, 0, 0, 128))
         state_button.fill(color=(0, 0, 0, 128))
         state_button_text = large.render("Physical", True, (0, 0, 0, 128))
         state_button.blit(state_button_text, (state_button_size[2] / 2 - state_button_text.get_width() / 2,
@@ -211,18 +214,20 @@ def main():
                             dragging = True  # start dragging the canvas
                             drag_cords = (pyg.mouse.get_pos(), campos.copy())
                     if event.button == pyg.BUTTON_RIGHT:  # if the right mouse button was pressed
-                        try: [X for X in NICs if X.held][0].held = False  # if holding a wire, stop
+                        try: [X for X in NICs if X.active][0].active = False  # if holding a wire, stop
                         except IndexError: pass  # dont crash if not holding a wire
                 if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
                     if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                         dragging = False  # stop dragging the canvas
                 hardware_group.update()  # redraw the hardware assets (probably have moved)
+                NICs.update()  # update the NIC's (move with the hardware)
             if dragging:  # if dragging the canvas, move the camera with the mouse
                 campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
                 campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
-            NICs.update()  # update the NIC's (move with the hardware)
+
             draw()
 
+        toolbox.fill(color=(0, 0, 0, 128))
         state_button.fill(color=(0, 0, 0, 128))
         state_button_text = large.render("Logical", True, (0, 0, 0, 128))
         state_button.blit(state_button_text, (state_button_size[2] / 2 - state_button_text.get_width() / 2,
@@ -245,6 +250,17 @@ def main():
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             try: X.logical_click()  # call the clicked function
                             except AttributeError: pass
+                    else:  # if nothing was clicked
+                        dragging = True  # start dragging the canvas
+                        drag_cords = (pyg.mouse.get_pos(), campos.copy())
+                if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
+                    if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
+                        dragging = False  # stop dragging the canvas
+                hardware_group.update()  # redraw the hardware assets (probably have moved)
+                NICs.update()  # update the NIC's (move with the hardware)
+            if dragging:  # if dragging the canvas, move the camera with the mouse
+                campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
+                campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
             draw()
 
 
@@ -260,9 +276,7 @@ if __name__ == "__main__":
     menu_buttons = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
     NICs = pyg.sprite.Group()  # nics need a seperate group to ensure they get click and draw z priority
-    holding = lambda: bool([X for X in [X for X in NICs] + [X for X in clickable] if X.held])
+    holding = lambda: bool([X for X in [X for X in NICs] + [X for X in clickable] if X.active])
     # function to determine if any instances have the held flag set
-
     large = pyg.font.SysFont("arial", 40)
-
     main()
