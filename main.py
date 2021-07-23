@@ -15,8 +15,9 @@ class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the scree
         self.rect.x = self.xpos + campos[0]
         self.rect.y = self.ypos + campos[1]
 
-    def clicked(self):  # if clicked, check to see if should be held or dropped, if dropped onto toolbox, remove
+    def physical_click(self):  # if clicked, check to see if should be held or dropped, if dropped onto toolbox, remove
         global toolbox_size
+        print(type(self).__name__)
         if self.held:
             self.held = 0
             toolbox = pyg.rect.Rect(toolbox_size)
@@ -95,8 +96,9 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
                     connections.remove(X)
             del self
 
-    def clicked(self):
+    def physical_click(self):
         global connections
+        print(type(self).__name__)
         if holding():
             for X in connections:
                 if X[0] == self or X[1] == self:
@@ -123,7 +125,8 @@ class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
         self.cmd = cmd
 
     # if menu button is clicked, check to see if holding anything before calling cmd (spawn hardware)
-    def clicked(self):
+    def physical_click(self):
+        print(type(self).__name__)
         if not holding():
             self.cmd()
 
@@ -137,6 +140,8 @@ def draw():
     if state == "physical":
         screen.blit(toolbox, toolbox_size)  # draw te toolbox
         menu_buttons.draw(screen)  # draw the menu buttons
+        for X in [X for X in NICs if X.held]:
+            pyg.draw.line(screen, (0, 0, 0), (X.rect.x + 5, X.rect.y + 5), pyg.mouse.get_pos(), 3)
     screen.blit(state_button, state_button_size)
     pyg.display.flip()  # flip the screen buffer
     clock.tick(60)  # wait 1/60th of a second from the last time a frame was drawn
@@ -194,11 +199,13 @@ def main():
                     if event.button == pyg.BUTTON_LEFT:  # if the left button was pressed
                         print(event.pos, pyg.rect.Rect(state_button_size))
                         if pyg.rect.Rect(state_button_size).collidepoint(event.pos):
-                            state = "logical"
-                            break
+                            if not holding():
+                                state = "logical"
+                                break
                         for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and the clickable group
                             if X.rect.collidepoint(event.pos):  # if it was clicked
-                                X.clicked()  # call the clicked function
+                                try: X.physical_click()  # call the clicked function
+                                except AttributeError: pass
                                 break  # stop looking for collisions
                         else:  # if nothing was clicked
                             dragging = True  # start dragging the canvas
@@ -234,6 +241,10 @@ def main():
                     if pyg.rect.Rect(state_button_size).collidepoint(event.pos):
                         state = "physical"
                         break
+                    for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and the clickable group
+                        if X.rect.collidepoint(event.pos):  # if it was clicked
+                            try: X.logical_click()  # call the clicked function
+                            except AttributeError: pass
             draw()
 
 
