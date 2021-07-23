@@ -1,5 +1,9 @@
 import pygame as pyg
 
+def center_text(text, xcor, ycor, font, colour):
+    txt = font.render(text, True, colour)
+
+
 
 class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
     def __init__(self, image, groups=tuple):
@@ -18,14 +22,14 @@ class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the scree
     def clicked(self):  # if clicked, check to see if should be held or dropped, if dropped onto toolbox, remove
         global holding, toolbox_size
         if self.held:
-            self.held, holding = 0, 0
+            self.held = 0
             toolbox = pyg.rect.Rect(toolbox_size)
             if self.rect.colliderect(toolbox):
                 self.kill()
                 del self
         else:
-            if not holding:
-                self.held, holding = 1, 1
+            if not holding():
+                self.held = 1
 
     def update(self):  # if held, reposition and then draw itself
         if self.held:
@@ -77,9 +81,9 @@ class Router(Hardware):  # class for firewalls
 
 
 class Nic(pyg.sprite.Sprite):  # class for NIC's
-    def __init__(self, parent, x_off, y_off):
+    def __init__(self, parent, x_off, y_off, type = "physical"):
         self.image = pyg.image.load("NIC.png")
-        self.parent, self.x_off, self.y_off, self.held = parent, x_off, y_off, False
+        self.parent, self.x_off, self.y_off, self.held, self.type = parent, x_off, y_off, False, type
         super().__init__(NICs)
         self.rect = self.image.get_rect()
 
@@ -97,8 +101,7 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
 
     def clicked(self):
         global holding, connections
-        if holding:
-            holding = False
+        if holding():
             for X in connections:
                 if X[0] == self or X[1] == self:
                     connections.remove(X)
@@ -111,11 +114,12 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
                 if X[0] == self or X[1] == self:
                     connections.remove(X)
                     break
-            self.held, holding = True, True
+            self.held = True
 
 
 class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
     def __init__(self, image, xpos, ypos, group, cmd):
+        self.held = 0 #  needed for compatability
         super().__init__(group)
         self.image = image
         self.rect = image.get_rect()
@@ -125,8 +129,7 @@ class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
     # if menu button is clicked, check to see if holding anything before calling cmd (spawn hardware)
     def clicked(self):
         global holding
-        if not holding:
-            holding = True
+        if not holding():
             self.cmd()
 
 
@@ -140,8 +143,13 @@ def main():
     # create the toolbox surface
     toolbox_size = (0, screen.get_height() / 10, (screen.get_width() / 10) * 2, (screen.get_height() / 10) * 8)
     toolbox = pyg.Surface(toolbox_size[2:], pyg.SRCALPHA)
-
     toolbox.fill(color=(0, 0, 0, 128))  # colour the toolbox surface
+
+    state_button_size = ((screen.get_width()/10)*8, (screen.get_height()/10)*8, (screen.get_width()/10), (screen.get_height()/10))
+    state_button = pyg.Surface(state_button_size[2:], pyg.SRCALPHA)
+    state_button.fill(color=(0, 0, 0, 128))
+    state_button.blit(large.render("Simulate", True ,(0, 0, 0, 128)), (0, 0))
+    
 
     # create menu buttons for endpoint server and switch
     image = pyg.image.load("endpoint.png")
@@ -184,7 +192,6 @@ def main():
                 if event.button == pyg.BUTTON_RIGHT:  # if the right mouse button was pressed
                     try:
                         [X for X in NICs if X.held == True][0].held = False  # if holding a wire, stop
-                        holding = False
                     except IndexError: pass  # dont crash if not holding a wire
             if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
                 if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
@@ -203,6 +210,7 @@ def main():
         NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
         screen.blit(toolbox, toolbox_size)  # draw te toolbox
         menu_buttons.draw(screen)  # draw the menu buttons
+        screen.blit(state_button, state_button_size)
         pyg.display.flip()  # flip the screen buffer
         clock.tick(60)  # wait 1/60th of a second from the last time a frame was drawn
 
@@ -210,7 +218,8 @@ def main():
 if __name__ == "__main__":
     campos = [0, 0]
     speed = 30
-    holding = 0  # Holding refers to holding a sprite or "holding the end of a diagram line"
+
+    state = "design"
     pyg.init()
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
     clock = pyg.time.Clock()
@@ -218,4 +227,9 @@ if __name__ == "__main__":
     menu_buttons = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
     NICs = pyg.sprite.Group()  # nics need a seperate group to ensure they get click and draw z priority
+    holding = lambda: bool([X for X in [X for X in NICs] + [X for X in clickable] if X.held])
+    # Holding refers to holding a sprite or "holding the end of a diagram line"
+    
+    large = pyg.font.SysFont("arial", 40)
+    
     main()

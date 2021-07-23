@@ -1,0 +1,6 @@
+Physical / Virtual NIC's for endpoints and servers (configured in the hardare window)
+servers host services that enpoints can connect to (configured in the hardare window)
+routers can port forward their traffic (configured in the hardare window)
+switches can hand out dhcp IP addresses or devices can be static (configured in the hardare window)
+DNS resolver settings (separate to network)
+
