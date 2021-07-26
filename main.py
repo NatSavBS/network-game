@@ -1,4 +1,6 @@
 import pygame as pyg
+import ipaddress
+
 
 
 class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
@@ -42,6 +44,18 @@ class Endpoint(Hardware):  # class for endpoint devices
         Nic(self, -5, 20)
         super().__init__(image, groups)
 
+    def logical_click(self):
+        logical_menu.empty()
+        # create menu to set remote server
+        # create static menu elements
+        MenuText(standard.render("Remote server IP", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 60,
+                 logical_menu)
+        MenuText(standard.render("Remote server Port", True, (0, 0, 0)), 20, toolbox_size[1] + 110, logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 150,
+                 logical_menu)
+
+
 
 class Server(Hardware):  # class for server devices
     def __init__(self, groups):
@@ -49,6 +63,32 @@ class Server(Hardware):  # class for server devices
         for X in [[-5, 35], [-5, 65], [65, 35], [65, 65]]:
             Nic(self, X[0], X[1])
         super().__init__(image, groups)
+
+    def logical_click(self):
+        logical_menu.empty()
+        # create menu to set IP's and ports to listen on
+        # create static menu elements
+        MenuText(standard.render("Service 1", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
+        MenuText(standard.render("IP's to listen on", True, (0, 0, 0)), 20, toolbox_size[1] + 60, logical_menu)
+        # TODO tickbox class
+        MenuText(standard.render("Port", True, (0, 0, 0)), 20, toolbox_size[1] + 110, logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 150,
+                 logical_menu)
+
+        MenuText(standard.render("Service 2", True, (0, 0, 0)), 20, toolbox_size[1] + 220, logical_menu)
+        MenuText(standard.render("IP's to listen on", True, (0, 0, 0)), 20, toolbox_size[1] + 260, logical_menu)
+        # TODO tickbox class
+        MenuText(standard.render("Port", True, (0, 0, 0)), 20, toolbox_size[1] + 310, logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 350,
+                 logical_menu)
+
+        MenuText(standard.render("Service 3", True, (0, 0, 0)), 20, toolbox_size[1] + 420, logical_menu)
+        MenuText(standard.render("IP's to listen on", True, (0, 0, 0)), 20, toolbox_size[1] + 460, logical_menu)
+        # TODO tickbox class
+        MenuText(standard.render("Port", True, (0, 0, 0)), 20, toolbox_size[1] + 510, logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 550,
+                 logical_menu)
+
 
 
 class Switch(Hardware):  # class for switch devices
@@ -59,6 +99,42 @@ class Switch(Hardware):  # class for switch devices
                 Nic(self, X, Y)
         super().__init__(image, groups)
 
+    def logical_click(self):
+        logical_menu.empty()
+        # create menu to set routing rules
+        # create static menu elements
+        MenuText(standard.render("Routing", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
+
+        MenuText(standard.render("Route 1", True, (0, 0, 0)), 20, toolbox_size[1] + 60, logical_menu)
+        MenuText(standard.render("IP address", True, (0, 0, 0)), 20, toolbox_size[1] + 90,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 120,
+                 logical_menu)
+        MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 150,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 180,
+                 logical_menu)
+
+        MenuText(standard.render("Route 2", True, (0, 0, 0)), 20, toolbox_size[1] + 230, logical_menu)
+        MenuText(standard.render("IP address", True, (0, 0, 0)), 20, toolbox_size[1] + 260,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 290,
+                 logical_menu)
+        MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 320,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 350,
+                 logical_menu)
+
+        MenuText(standard.render("Rule 3", True, (0, 0, 0)), 20, toolbox_size[1] + 400, logical_menu)
+        MenuText(standard.render("IP address", True, (0, 0, 0)), 20, toolbox_size[1] + 430,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 460,
+                 logical_menu)
+        MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 490,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 520,
+                 logical_menu)
+
 
 class Firewall(Hardware):  # class for firewalls
     def __init__(self, groups):
@@ -68,6 +144,54 @@ class Firewall(Hardware):  # class for firewalls
             Nic(self, X[0], X[1])
         super().__init__(image, groups)
 
+    def logical_click(self):
+        logical_menu.empty()
+        # create menu to set firewall allow rules
+        # create static menu elements
+        MenuText(standard.render("Firewall Rules", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
+
+        MenuText(standard.render("Rule 1", True, (0, 0, 0)), 20, toolbox_size[1] + 60, logical_menu)
+        MenuText(standard.render("Source Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 90,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 120,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 120,
+                 logical_menu)
+        MenuText(standard.render("Destination Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 150,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 180,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 180,
+                 logical_menu)
+
+        MenuText(standard.render("Rule 2", True, (0, 0, 0)), 20, toolbox_size[1] + 230, logical_menu)
+        MenuText(standard.render("Source Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 260,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 290,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 290,
+                 logical_menu)
+        MenuText(standard.render("Destination Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 320,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 350,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 350,
+                 logical_menu)
+
+        MenuText(standard.render("Rule 3", True, (0, 0, 0)), 20, toolbox_size[1] + 400, logical_menu)
+        MenuText(standard.render("Source Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 430,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 460,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 460,
+                 logical_menu)
+        MenuText(standard.render("Destination Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 490,
+                 logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 520,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 520,
+                 logical_menu)
+
 
 class Router(Hardware):  # class for firewalls
     def __init__(self, groups):
@@ -75,6 +199,52 @@ class Router(Hardware):  # class for firewalls
         image.fill("CYAN")
         Nic(self, 10, -5)
         super().__init__(image, groups)
+
+    def logical_click(self):
+        logical_menu.empty()
+        # create menu to set external ip and port forwarding rules
+        # create static menu elements
+        MenuText(standard.render("External IP address", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 60,
+                 logical_menu)
+        MenuText(standard.render("Port Forwarding", True, (0, 0, 0)), 20, toolbox_size[1] + 110, logical_menu)
+
+        MenuText(standard.render("Rule 1", True, (0, 0, 0)), 20, toolbox_size[1] + 150, logical_menu)
+        MenuText(standard.render("External Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 180, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 210,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 210,
+                 logical_menu)
+        MenuText(standard.render("Internal Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 240, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 270,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 270,
+                 logical_menu)
+
+        MenuText(standard.render("Rule 2", True, (0, 0, 0)), 20, toolbox_size[1] + 320, logical_menu)
+        MenuText(standard.render("External Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 350, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 380,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 380,
+                 logical_menu)
+        MenuText(standard.render("Internal Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 410, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 440,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 440,
+                 logical_menu)
+
+        MenuText(standard.render("Rule 3", True, (0, 0, 0)), 20, toolbox_size[1] + 490, logical_menu)
+        MenuText(standard.render("External Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 520, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 550,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 550,
+                 logical_menu)
+        MenuText(standard.render("Internal Ip Address and Port", True, (0, 0, 0)), 20, toolbox_size[1] + 580, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 610,
+                 logical_menu)
+        MenuText(standard.render("     ", True, (0, 0, 0), (255, 255, 255)), 150, toolbox_size[1] + 610,
+                 logical_menu)
+
 
 
 class Nic(pyg.sprite.Sprite):  # class for NIC's
@@ -114,10 +284,26 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
                     break
             self.active = True
 
+    def logical_click(self):
+        logical_menu.empty()
+        # create menu to set ip, netmask and gateway
+        # create static menu elements
+        MenuText(standard.render("IP address", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 60,
+                 logical_menu)
+        MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 110, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 150,
+                 logical_menu)
+        MenuText(standard.render("Default gateway", True, (0, 0, 0)), 20, toolbox_size[1] + 200, logical_menu)
+        MenuText(standard.render("   .   .   .   ", True, (0, 0, 0), (255, 255, 255)), 20, toolbox_size[1] + 240,
+                 logical_menu)
+
+
+
 
 class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
     def __init__(self, image, xpos, ypos, group, cmd):
-        self.active = 0  # needed for compatability
+        self.active = 0  # needed for compatibility
         super().__init__(group)
         self.image = image
         self.rect = image.get_rect()
@@ -126,9 +312,16 @@ class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
 
     # if menu button is clicked, check to see if holding anything before calling cmd (spawn hardware)
     def physical_click(self):
-        print(type(self).__name__)
         if not holding():
             self.cmd()
+
+class MenuText(pyg.sprite.Sprite):  # class for non clickable menu elements
+    def __init__(self, image, xpos, ypos, group):
+        self.active = 0  # needed for compatibility
+        super().__init__(group)
+        self.image = image
+        self.rect = image.get_rect()
+        self.rect.x, self.rect.y = xpos, ypos
 
 def draw():
     global state
@@ -139,11 +332,11 @@ def draw():
     NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
     screen.blit(toolbox, toolbox_size)  # draw te toolbox
     if state == "physical":
-        menu_buttons.draw(screen)  # draw the menu buttons
+        physical_menu.draw(screen)  # draw the menu buttons
         for X in [X for X in NICs if X.active]:
             pyg.draw.line(screen, (0, 0, 0), (X.rect.x + 5, X.rect.y + 5), pyg.mouse.get_pos(), 3)
     if state == "logical":
-        pass # TODO
+        logical_menu.draw(screen)
     screen.blit(state_button, state_button_size)
     pyg.display.flip()  # flip the screen buffer
     clock.tick(60)  # wait 1/60th of a second from the last time a frame was drawn
@@ -166,21 +359,22 @@ def main():
 
     # create menu buttons for endpoint server and switch
     image = pyg.image.load("endpoint.png")
-    MenuButton(image, 20, 110, (menu_buttons, clickable), lambda: Endpoint((hardware_group, clickable)))
-
+    MenuButton(image, 20, toolbox_size[1] + 20, (physical_menu, clickable),
+               lambda: Endpoint((hardware_group, clickable)))
     image = pyg.image.load("server.png")
-    MenuButton(image, 20, 180, (menu_buttons, clickable), lambda: Server((hardware_group, clickable)))
-
+    MenuButton(image, 20, toolbox_size[1] + 90, (physical_menu, clickable),
+               lambda: Server((hardware_group, clickable)))
     image = pyg.image.load("switch.png")
-    MenuButton(image, 20, 300, (menu_buttons, clickable), lambda: Switch((hardware_group, clickable)))
-
+    MenuButton(image, 20, toolbox_size[1] + 210, (physical_menu, clickable),
+               lambda: Switch((hardware_group, clickable)))
     image = pyg.Surface((70, 30))
     image.fill("PURPLE")
-    MenuButton(image, 20, 420, (menu_buttons, clickable), lambda: Firewall((hardware_group, clickable)))
-
+    MenuButton(image, 20, toolbox_size[1] + 330, (physical_menu, clickable),
+               lambda: Firewall((hardware_group, clickable)))
     image = pyg.Surface((30, 30))
     image.fill("CYAN")
-    MenuButton(image, 20, 470, (menu_buttons, clickable), lambda: Router((hardware_group, clickable)))
+    MenuButton(image, 20, toolbox_size[1] + 380, (physical_menu, clickable),
+               lambda: Router((hardware_group, clickable)))
 
     while running:
         toolbox.fill(color=(0, 0, 0, 128))
@@ -273,10 +467,12 @@ if __name__ == "__main__":
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
     clock = pyg.time.Clock()
     hardware_group = pyg.sprite.Group()
-    menu_buttons = pyg.sprite.Group()
+    physical_menu = pyg.sprite.Group()
+    logical_menu = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
     NICs = pyg.sprite.Group()  # nics need a seperate group to ensure they get click and draw z priority
     holding = lambda: bool([X for X in [X for X in NICs] + [X for X in clickable] if X.active])
     # function to determine if any instances have the held flag set
     large = pyg.font.SysFont("arial", 40)
+    standard = pyg.font.SysFont("arial", 25)
     main()
