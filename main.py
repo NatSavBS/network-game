@@ -287,6 +287,8 @@ class MenuText(pyg.sprite.Sprite):  # class for non clickable menu elements
 class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
     def __init__(self, parent, length, xpos, ypos, var, group):
         self.active, self.parent, self.length, self.xpos, self.ypos, self.var = False, parent, length, xpos, ypos, var
+        if self.length == 3: self.max_value = 256  # inhibit impossible values
+        if self.length == 5: self.max_value = 65536
         super().__init__(group)  # call parent class
         try:
             self.parent.__getattribute__(self.var)  # test if parent var already exists
@@ -311,12 +313,13 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
     def keyboard_event(self, event):  # if keystroke while active
         # if 0-9 are pressed and there is space to type them
         if 47 < event.key < 58 and len(self.parent.__getattribute__(self.var).strip()) < self.length:
-            self.parent.__setattr__(self.var,  # update parent var
-                                    (self.parent.__getattribute__(self.var).strip() + event.unicode))
-            self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
-                                         (0, 0, 0), (200, 200, 200))  # redraw
-            self.rect = self.image.get_rect()  # update rect
-            self.rect.x, self.rect.y = self.xpos, self.ypos
+            if int(self.parent.__getattribute__(self.var)+event.unicode) < self.max_value:  # if value is legal
+                self.parent.__setattr__(self.var,  # update parent var
+                                        (self.parent.__getattribute__(self.var).strip() + event.unicode))
+                self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
+                                             (0, 0, 0), (200, 200, 200))  # redraw
+                self.rect = self.image.get_rect()  # update rect
+                self.rect.x, self.rect.y = self.xpos, self.ypos
             try:
                 self.parent.callback()  # quad octet uses callback to update itself when entry is updates
             except:
