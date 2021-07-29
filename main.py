@@ -4,37 +4,35 @@ import ipaddress
 
 class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
     def __init__(self, image, groups):
-        self.xpos, self.ypos = pyg.mouse.get_pos()
-        self.active = True
-        super().__init__(groups)
-        self.draw(image)
+        self.xpos, self.ypos = pyg.mouse.get_pos()  # set initial position to that of the mouse cursor
+        self.active = True  # set the active flag (hardware is held when created)
+        super().__init__(groups)  # initialise the parent class
+        self.draw(image)  # call to have the image applied and the rect placed
 
     def draw(self, image=None):  # if the image has changed, reset it and reposition based on camera
-        if image:
-            self.image = image
-            self.rect = self.image.get_rect()
-        self.rect.x = self.xpos + campos[0]
-        self.rect.y = self.ypos + campos[1]
+        if image:  # if an image was supplied
+            self.image = image  # give scope
+            self.rect = self.image.get_rect()  # get size of image
+        self.rect.x, self. rect.y = self.xpos + campos[0], self.ypos + campos[1]  # place image onto screen
 
-    def physical_click(self):  # if clicked, check to see if should be held or dropped, if dropped onto toolbox, remove
+    def physical_click(self):  # if clicked, in physical mode
         global toolbox_size
-        print(type(self).__name__)
-        if self.active:
-            self.active = False
+        if self.active:  # if held
+            self.active = False  # stop holding
             toolbox = pyg.rect.Rect(toolbox_size)
-            if self.rect.colliderect(toolbox):
+            if self.rect.colliderect(toolbox):  # if "dropped" onto toolbox, destroy
                 self.kill()
                 del self
-        else:
-            if not holding():
-                self.active = True
+        else:  # if not held
+            if not holding():  # if not holding anything else
+                self.active = True  # hold
 
     def update(self):  # if held, reposition and then draw itself
-        if self.active:
-            self.xpos, self.ypos = pyg.mouse.get_pos()
+        if self.active:  # if held
+            self.xpos, self.ypos = pyg.mouse.get_pos()  # reposition middle to mouse cursor
             self.xpos, self.ypos = self.xpos - (self.rect.width / 2) - campos[0], \
                                    self.ypos - (self.rect.height / 2) - campos[1]
-        self.draw()
+        self.draw()  # call draw
 
 
 class Endpoint(Hardware):  # class for endpoint devices
@@ -43,17 +41,14 @@ class Endpoint(Hardware):  # class for endpoint devices
         Nic(self, -5, 20)
         super().__init__(image, groups)
 
-    def logical_click(self):
-        for X in [X for X in logical_menu]: X.kill()
+    def logical_click(self):  # if clicked in logical mode
+        for X in [X for X in logical_menu]: X.kill()  # clear logical menu
         # create menu to set remote server
         # create static menu elements
         MenuText(standard.render("Remote server IP", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
-        # MenuText(standard.render("   .   .   .   ", True, (0, 0, 0)), 20, toolbox_size[1] + 60,
-        #         logical_menu)
         MenuText(standard.render("Remote server Port", True, (0, 0, 0)), 20, toolbox_size[1] + 110, logical_menu)
         # create dynamic menu elements
         QuadOctetEntry(self, 20, toolbox_size[1] + 60, "remote_ip", logical_menu, (logical_menu, clickable))
-
         MenuEntry(self, 5, 20, toolbox_size[1] + 150, "remote_port", (clickable, logical_menu))
 
 
@@ -64,16 +59,15 @@ class Server(Hardware):  # class for server devices
             Nic(self, X[0], X[1])
         super().__init__(image, groups)
 
-    def logical_click(self):
-        for X in [X for X in logical_menu]: X.kill()
+    def logical_click(self):  # if clicked in logical mode
+        for X in [X for X in logical_menu]: X.kill()  # clear logical menu
 
-        interfaces = [X for X in NICs if X.parent == self]
-        print(interfaces)
+        interfaces = [X for X in NICs if X.parent == self]  # find nics parented by self
         for X in interfaces:
             print(X.ip)
 
         # create menu to set IP's and ports to listen on
-        # create static menu elements
+        # create menu elements
         MenuText(standard.render("Service 1", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
         MenuText(standard.render("IP's to listen on", True, (0, 0, 0)), 20, toolbox_size[1] + 60, logical_menu)
         # TODO tickbox class
@@ -96,7 +90,7 @@ class Server(Hardware):  # class for server devices
 class Switch(Hardware):  # class for switch devices
     def __init__(self, groups):
         image = pyg.image.load("switch.png")
-        for X in [4, 16]:
+        for X in [4, 16]:  # create menu elements
             for Y in [15, 25, 35, 45, 55, 65, 75, 85]:
                 Nic(self, X, Y)
         super().__init__(image, groups)
@@ -104,7 +98,7 @@ class Switch(Hardware):  # class for switch devices
     def logical_click(self):
         for X in [X for X in logical_menu]: X.kill()
         # create menu to set routing rules
-        # create static menu elements
+        # create menu elements
         MenuText(standard.render("Routing", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
 
         MenuText(standard.render("Route 1", True, (0, 0, 0)), 20, toolbox_size[1] + 60, logical_menu)
@@ -130,9 +124,9 @@ class Firewall(Hardware):  # class for firewalls
     def __init__(self, groups):
         image = pyg.Surface((70, 30))
         image.fill("PURPLE")
-        for X in [[9, -5], [23, -5], [37, -5], [51, -5], [30, 25]]:
+        for X in [[9, -5], [23, -5], [37, -5], [51, -5], [30, 25]]:  # create NIC's
             Nic(self, X[0], X[1])
-        super().__init__(image, groups)
+        super().__init__(image, groups)  # create parent class
 
     def logical_click(self):
         for X in [X for X in logical_menu]: X.kill()
@@ -171,7 +165,7 @@ class Firewall(Hardware):  # class for firewalls
         MenuEntry(self, 5, 190, toolbox_size[1] + 520, "internal_port_3", (clickable, logical_menu))
 
 
-class Router(Hardware):  # class for firewalls
+class Router(Hardware):  # class for routers
     def __init__(self, groups):
         image = pyg.Surface((30, 30))
         image.fill("CYAN")
@@ -221,7 +215,7 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
     def __init__(self, parent, x_off, y_off, type="physical"):
         self.image = pyg.image.load("NIC.png")
         self.parent, self.x_off, self.y_off, self.active, self.type = parent, x_off, y_off, False, type
-        super().__init__(NICs)
+        super().__init__(NICs)  # create parent class and add to NIC group
         self.rect = self.image.get_rect()
 
     def update(self):
@@ -266,7 +260,7 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
         QuadOctetEntry(self, 20, toolbox_size[1] + 240, "gateway", logical_menu, (logical_menu, clickable))
 
 
-class MenuButton(pyg.sprite.Sprite):  # class for menu buttons
+class MenuButton(pyg.sprite.Sprite):  # class for physical menu buttons
     def __init__(self, image, xpos, ypos, group, cmd):
         self.active = False  # needed for compatibility
         super().__init__(group)
@@ -290,46 +284,47 @@ class MenuText(pyg.sprite.Sprite):  # class for non clickable menu elements
         self.rect.x, self.rect.y = xpos, ypos
 
 
-class MenuEntry(pyg.sprite.Sprite):  # class for menu text entries
+class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
     def __init__(self, parent, length, xpos, ypos, var, group):
         self.active, self.parent, self.length, self.xpos, self.ypos, self.var = False, parent, length, xpos, ypos, var
-        super().__init__(group)
+        super().__init__(group)  # call parent class
         try:
-            self.parent.__getattribute__(self.var)
+            self.parent.__getattribute__(self.var)  # test if parent var already exists
         except:
-            self.parent.__setattr__(self.var, "")  # fill var with spaces
+            self.parent.__setattr__(self.var, "")  # create parent var
         self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True, (0, 0, 0),
-                                     (255, 255, 255))
-        self.rect = self.image.get_rect()
+                                     (255, 255, 255))  # draw from parent var and pad with spaces
+        self.rect = self.image.get_rect()  # update rect
         self.rect.x, self.rect.y = self.xpos, self.ypos
 
-    def logical_click(self):
-        if self.active:
-            self.active = False
+    def logical_click(self):  # if clicked in logical mode
+        if self.active:  # if active (selected)
+            self.active = False  # deselect
             self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
-                                         (0, 0, 0), (255, 255, 255))
-        else:
-            if holding(): [X for X in clickable if X.active][0].logical_click()
-            self.active = True
+                                         (0, 0, 0), (255, 255, 255))  # redraw
+        else:  # if not holding
+            if holding(): [X for X in clickable if X.active][0].logical_click()  # deselect anything else
+            self.active = True  # make active
             self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
-                                         (0, 0, 0), (200, 200, 200))
+                                         (0, 0, 0), (200, 200, 200))  # redraw
 
-    def keyboard_event(self, event):
+    def keyboard_event(self, event):  # if keystroke while active
+        # if 0-9 are pressed and there is space to type them
         if 47 < event.key < 58 and len(self.parent.__getattribute__(self.var).strip()) < self.length:
-            self.parent.__setattr__(self.var,
+            self.parent.__setattr__(self.var,  # update parent var
                                     (self.parent.__getattribute__(self.var).strip() + event.unicode))
             self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
-                                         (0, 0, 0), (200, 200, 200))
-            self.rect = self.image.get_rect()
+                                         (0, 0, 0), (200, 200, 200))  # redraw
+            self.rect = self.image.get_rect()  # update rect
             self.rect.x, self.rect.y = self.xpos, self.ypos
             try:
-                self.parent.callback()
+                self.parent.callback()  # quad octet uses callback to update itself when entry is updates
             except:
-                pass
-        if event.key == 8:
-            self.parent.__setattr__(self.var, self.parent.__getattribute__(self.var).strip()[0:-1])
+                pass  # "raw" entries dont have a callbac class
+        if event.key == 8:  # if backspace is pressed
+            self.parent.__setattr__(self.var, self.parent.__getattribute__(self.var).strip()[0:-1])  # remove last char
             self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
-                                         (0, 0, 0), (200, 200, 200))
+                                         (0, 0, 0), (200, 200, 200))  # redraw
             self.rect = self.image.get_rect()
             self.rect.x, self.rect.y = self.xpos, self.ypos
             try:
@@ -340,38 +335,37 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu text entries
             self.logical_click()
 
 
-class QuadOctetEntry(pyg.sprite.Sprite):
+class QuadOctetEntry(pyg.sprite.Sprite):  # helper class for quad octet based entries
     def __init__(self, parent, xpos, ypos, var, group, child_group):
         self.parent, self.xpos, self.ypos, self.var = parent, xpos, ypos, var
-
-        try:
+        try:  # test if parent already has var set
             octs = self.parent.__getattribute__(self.var).strip().split(".")
-            self.oct1, self.oct2, self.oct3, self.oct4 = octs[0], octs[1], octs[2], octs[3]
-            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)
+            self.oct1, self.oct2, self.oct3, self.oct4 = octs[0], octs[1], octs[2], octs[3]  # load octets
+            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)  # make entries
             self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
             self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
             self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
-            self.callback()
-
-        except:
-            self.parent.__setattr__(self.var, "...")
-            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)
+            self.callback()  # call callback to accomodate entries
+        except:  # if the var doesnt exist
+            self.parent.__setattr__(self.var, "...")  # set the var
+            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)  # make entries
             self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
             self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
             self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
-        self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")
+        self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")  # set the image (dots)
                                      + "." + self.oct3.ljust(3," ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
-        super().__init__(group)
+        super().__init__(group)  # call parent
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.xpos, self.ypos
 
-    def callback(self):
+    def callback(self):  # used to update parent class and accomodate entries
+        # combine octets into quad octet
         self.parent.__setattr__(self.var, self.oct1 + "." + self.oct2 + "." + self.oct3 + "." + self.oct4)
-        self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")
+        self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")  # redraw
                                      + "." + self.oct3.ljust(3," ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.xpos, self.ypos
-        self.oct2e.rect.x = self.oct1e.rect.x + self.oct1e.rect.width + 6
+        self.oct2e.rect.x = self.oct1e.rect.x + self.oct1e.rect.width + 6  # cascade spacing along the octets for dots
         self.oct3e.rect.x = self.oct2e.rect.x + self.oct2e.rect.width + 6
         self.oct4e.rect.x = self.oct3e.rect.x + self.oct3e.rect.width + 6
 
@@ -384,20 +378,20 @@ def draw():
     hardware_group.draw(screen)  # draw the hardware
     NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
     screen.blit(toolbox, toolbox_size)  # draw te toolbox
-    if state == "physical":
+    if state == "physical":  # if in physical mode
         physical_menu.draw(screen)  # draw the menu buttons
-        for X in [X for X in NICs if X.active]:
+        for X in [X for X in NICs if X.active]:  # if drawing a connection, draw a line between the nic and the mouse
             pyg.draw.line(screen, (0, 0, 0), (X.rect.x + 5, X.rect.y + 5), pyg.mouse.get_pos(), 3)
-    if state == "logical":
-        logical_menu.draw(screen)
-    screen.blit(state_button, state_button_size)
+    if state == "logical":  # if in logical mode
+        logical_menu.draw(screen)  # draw the menu
+    screen.blit(state_button, state_button_size)  # draw the state button
     pyg.display.flip()  # flip the screen buffer
     clock.tick(60)  # wait 1/60th of a second from the last time a frame was drawn
 
 
-def main():
+def main():  # main gameloop function
     global campos, speed, toolbox, toolbox_size, state_button, state_button_size, connections, state
-    running = True
+    running = True # set gameloop vars
     dragging = False
     drag_cords = [[0, 0], [0, 0]]
     connections = []
@@ -407,11 +401,12 @@ def main():
     toolbox = pyg.Surface(toolbox_size[2:], pyg.SRCALPHA)
     toolbox.fill(color=(0, 0, 0, 128))  # colour the toolbox surface
 
+    # create state button
     state_button_size = ((screen.get_width() / 10) * 8, (screen.get_height() / 10) * 8, (screen.get_width() / 10),
                          (screen.get_height() / 10))
     state_button = pyg.Surface(state_button_size[2:], pyg.SRCALPHA)
 
-    # create menu buttons for endpoint server and switch
+    # create menu buttons for endpoint, server, switch, firewall and router
     image = pyg.image.load("endpoint.png")
     MenuButton(image, 20, toolbox_size[1] + 20, (physical_menu, clickable),
                lambda: Endpoint((hardware_group, clickable)))
@@ -431,12 +426,12 @@ def main():
                lambda: Router((hardware_group, clickable)))
 
     while running:
-        toolbox.fill(color=(0, 0, 0, 128))
+        toolbox.fill(color=(0, 0, 0, 128))  # clear the toolbox and state button
         state_button.fill(color=(0, 0, 0, 128))
-        state_button_text = large.render("Physical", True, (0, 0, 0, 128))
+        state_button_text = large.render("Physical", True, (0, 0, 0, 128))  # draw state button text
         state_button.blit(state_button_text, (state_button_size[2] / 2 - state_button_text.get_width() / 2,
                                               state_button_size[3] / 2 - state_button_text.get_height() / 2))
-        while state == "physical" and running:
+        while state == "physical" and running:  # while the game is in physical mode
             for event in pyg.event.get():  # For Every Event
                 if event.type == pyg.QUIT:  # Break on quit button
                     running = False
@@ -448,17 +443,16 @@ def main():
                     if event.key == pyg.K_ESCAPE: running = False  # Break on esc
                 if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
                     if event.button == pyg.BUTTON_LEFT:  # if the left button was pressed
-                        print(event.pos, pyg.rect.Rect(state_button_size))
-                        if pyg.rect.Rect(state_button_size).collidepoint(event.pos):
-                            if not holding():
-                                state = "logical"
-                                break
+                        if pyg.rect.Rect(state_button_size).collidepoint(event.pos):  # if state button was clicked
+                            if not holding():  # if not holding
+                                state = "logical"  # flip states
+                                break  # break event loop
                         for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and the clickable group
                             if X.rect.collidepoint(event.pos):  # if it was clicked
                                 try:
                                     X.physical_click()  # call the clicked function
                                 except AttributeError:
-                                    pass
+                                    pass  # not everything has a click function in physical mode
                                 break  # stop looking for collisions
                         else:  # if nothing was clicked
                             dragging = True  # start dragging the canvas
@@ -476,37 +470,36 @@ def main():
             if dragging:  # if dragging the canvas, move the camera with the mouse
                 campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
                 campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
+            draw()  # call for the game to draw a frame
 
-            draw()
-
-        toolbox.fill(color=(0, 0, 0, 128))
-        state_button.fill(color=(0, 0, 0, 128))
-        state_button_text = large.render("Logical", True, (0, 0, 0, 128))
+        toolbox.fill(color=(0, 0, 0, 128))  # clear the toolbox
+        state_button.fill(color=(0, 0, 0, 128))  # clear the state button
+        state_button_text = large.render("Logical", True, (0, 0, 0, 128))  # draw the state button text
         state_button.blit(state_button_text, (state_button_size[2] / 2 - state_button_text.get_width() / 2,
                                               state_button_size[3] / 2 - state_button_text.get_height() / 2))
-        while state == "logical" and running:
+        while state == "logical" and running:  # while the game is in logical mode
             for event in pyg.event.get():  # For Every Event
                 if event.type == pyg.QUIT:  # Break on quit button
                     running = False
-                if event.type == pyg.KEYDOWN:
-                    if holding():
-                        [X for X in clickable if X.active][0].keyboard_event(event)
-                    else:
-                        if event.key == pyg.K_w:    campos = [campos[0], campos[1] + speed]
+                if event.type == pyg.KEYDOWN:  # if a keyboard key is pressed
+                    if holding():  # if holding (a menu element)
+                        [X for X in clickable if X.active][0].keyboard_event(event)  # pass event to element
+                    else:  # if not holding a menu element
+                        if event.key == pyg.K_w:    campos = [campos[0], campos[1] + speed]  # move with wasd
                         if event.key == pyg.K_a:    campos = [campos[0] + speed, campos[1]]
                         if event.key == pyg.K_s:    campos = [campos[0], campos[1] - speed]
                         if event.key == pyg.K_d:    campos = [campos[0] - speed, campos[1]]
                         if event.key == pyg.K_ESCAPE: running = False  # Break on esc
-                if event.type == pyg.MOUSEBUTTONDOWN:
-                    if pyg.rect.Rect(state_button_size).collidepoint(event.pos):
-                        state = "physical"
-                        if holding(): [X for X in clickable if X.active][0].active = False
-                        break
+                if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
+                    if pyg.rect.Rect(state_button_size).collidepoint(event.pos):  # if the state button was pressed
+                        state = "physical"  # change state to physical
+                        if holding(): [X for X in clickable if X.active][0].active = False  #  if holding ,drop whatever is held
+                        break  # stop looking for colisions
                     for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and the clickable group
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             try:
                                 X.logical_click()  # call the clicked function
-                            except AttributeError:
+                            except AttributeError:  # not everything has a logical click function
                                 pass
                     else:  # if nothing was clicked
                         dragging = True  # start dragging the canvas
@@ -523,20 +516,20 @@ def main():
 
 
 if __name__ == "__main__":
-    campos = [0, 0]
-    speed = 30
+    campos = [0, 0]  # set camera origin
+    speed = 30  # set distance of wasd presses
 
-    state = "physical"
-    pyg.init()
-    screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))
-    clock = pyg.time.Clock()
-    hardware_group = pyg.sprite.Group()
+    state = "physical"  # start the game in physical UI mode
+    pyg.init()  # initialise pygame
+    screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))  # create the screen object
+    clock = pyg.time.Clock()  # create a frameclock object
+    hardware_group = pyg.sprite.Group()  # create sprite groups for the hardware, the hysical menu, the logical menu, clickable elements and NIC's
     physical_menu = pyg.sprite.Group()
     logical_menu = pyg.sprite.Group()
     clickable = pyg.sprite.Group()
     NICs = pyg.sprite.Group()  # nics need a seperate group to ensure they get click and draw z priority
     holding = lambda: bool([X for X in [X for X in NICs] + [X for X in clickable] if X.active])
     # function to determine if any instances have the held flag set
-    large = pyg.font.SysFont("arial", 40)
+    large = pyg.font.SysFont("arial", 40)  # create type objects to use ingame
     standard = pyg.font.SysFont("arial", 25)
-    main()
+    main()  # call the main gameloop
