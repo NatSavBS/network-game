@@ -66,6 +66,12 @@ class Server(Hardware):  # class for server devices
 
     def logical_click(self):
         for X in [X for X in logical_menu]: X.kill()
+
+        interfaces = [X for X in NICs if X.parent == self]
+        print(interfaces)
+        for X in interfaces:
+            print(X.ip)
+
         # create menu to set IP's and ports to listen on
         # create static menu elements
         MenuText(standard.render("Service 1", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
@@ -337,13 +343,25 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu text entries
 class QuadOctetEntry(pyg.sprite.Sprite):
     def __init__(self, parent, xpos, ypos, var, group, child_group):
         self.parent, self.xpos, self.ypos, self.var = parent, xpos, ypos, var
+
+        try:
+            octs = self.parent.__getattribute__(self.var).strip().split(".")
+            self.oct1, self.oct2, self.oct3, self.oct4 = octs[0], octs[1], octs[2], octs[3]
+            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)
+            self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
+            self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
+            self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
+            self.callback()
+
+        except:
+            self.parent.__setattr__(self.var, "...")
+            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)
+            self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
+            self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
+            self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
+        self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")
+                                     + "." + self.oct3.ljust(3," ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
         super().__init__(group)
-        self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)
-        self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
-        self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
-        self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
-        self.parent.__setattr__(self.var, self.oct1 + "." + self.oct2 + "." + self.oct3 + "." + self.oct4)
-        self.image = standard.render("   .   .   .   ", True, (0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.xpos, self.ypos
 
@@ -356,8 +374,6 @@ class QuadOctetEntry(pyg.sprite.Sprite):
         self.oct2e.rect.x = self.oct1e.rect.x + self.oct1e.rect.width + 6
         self.oct3e.rect.x = self.oct2e.rect.x + self.oct2e.rect.width + 6
         self.oct4e.rect.x = self.oct3e.rect.x + self.oct3e.rect.width + 6
-
-        print(self.parent.__getattribute__(self.var))
 
 
 def draw():
