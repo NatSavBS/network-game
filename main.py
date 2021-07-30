@@ -13,7 +13,7 @@ class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the scree
         if image:  # if an image was supplied
             self.image = image  # give scope
             self.rect = self.image.get_rect()  # get size of image
-        self.rect.x, self. rect.y = self.xpos + campos[0], self.ypos + campos[1]  # place image onto screen
+        self.rect.x, self.rect.y = self.xpos + campos[0], self.ypos + campos[1]  # place image onto screen
 
     def physical_click(self):  # if clicked, in physical mode
         global toolbox_size
@@ -61,30 +61,27 @@ class Server(Hardware):  # class for server devices
 
     def logical_click(self):  # if clicked in logical mode
         for X in [X for X in logical_menu]: X.kill()  # clear logical menu
-
-        interfaces = [X for X in NICs if X.parent == self]  # find nics parented by self
-        for X in interfaces:
-            print(X.ip)
-
         # create menu to set IP's and ports to listen on
         # create menu elements
         MenuText(standard.render("Service 1", True, (0, 0, 0)), 20, toolbox_size[1] + 20, logical_menu)
         MenuText(standard.render("IP's to listen on", True, (0, 0, 0)), 20, toolbox_size[1] + 60, logical_menu)
-        # TODO tickbox class
         MenuText(standard.render("Port", True, (0, 0, 0)), 20, toolbox_size[1] + 110, logical_menu)
         MenuEntry(self, 5, 20, toolbox_size[1] + 150, "port_1", (clickable, logical_menu))
 
         MenuText(standard.render("Service 2", True, (0, 0, 0)), 20, toolbox_size[1] + 220, logical_menu)
         MenuText(standard.render("IP's to listen on", True, (0, 0, 0)), 20, toolbox_size[1] + 260, logical_menu)
-        # TODO tickbox class
         MenuText(standard.render("Port", True, (0, 0, 0)), 20, toolbox_size[1] + 310, logical_menu)
         MenuEntry(self, 5, 20, toolbox_size[1] + 350, "port_2", (clickable, logical_menu))
 
         MenuText(standard.render("Service 3", True, (0, 0, 0)), 20, toolbox_size[1] + 420, logical_menu)
         MenuText(standard.render("IP's to listen on", True, (0, 0, 0)), 20, toolbox_size[1] + 460, logical_menu)
-        # TODO tickbox class
         MenuText(standard.render("Port", True, (0, 0, 0)), 20, toolbox_size[1] + 510, logical_menu)
         MenuEntry(self, 5, 20, toolbox_size[1] + 550, "port_3", (clickable, logical_menu))
+
+        interfaces = [X.ip for X in NICs if X.parent == self]  # find nics parented by self
+        MenuSelector(interfaces, self, 140, toolbox_size[1] + 70, "interfaces_1", (logical_menu, clickable))
+        MenuSelector(interfaces, self, 140, toolbox_size[1] + 270, "interfaces_2", (logical_menu, clickable))
+        MenuSelector(interfaces, self, 140, toolbox_size[1] + 470, "interfaces_3", (logical_menu, clickable))
 
 
 class Switch(Hardware):  # class for switch devices
@@ -116,7 +113,7 @@ class Switch(Hardware):  # class for switch devices
         MenuText(standard.render("Rule 3", True, (0, 0, 0)), 20, toolbox_size[1] + 400, logical_menu)
         MenuText(standard.render("IP address", True, (0, 0, 0)), 20, toolbox_size[1] + 430, logical_menu)
         QuadOctetEntry(self, 20, toolbox_size[1] + 460, "ip_3", logical_menu, (logical_menu, clickable))
-        MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 490,logical_menu)
+        MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 490, logical_menu)
         QuadOctetEntry(self, 20, toolbox_size[1] + 520, "netmask_3", logical_menu, (logical_menu, clickable))
 
 
@@ -214,7 +211,7 @@ class Router(Hardware):  # class for routers
 class Nic(pyg.sprite.Sprite):  # class for NIC's
     def __init__(self, parent, x_off, y_off, type="physical"):
         self.image = pyg.image.load("NIC.png")
-        self.parent, self.x_off, self.y_off, self.active, self.type = parent, x_off, y_off, False, type
+        self.parent, self.x_off, self.y_off, self.active, self.type, self.ip = parent, x_off, y_off, False, type, "..."
         super().__init__(NICs)  # create parent class and add to NIC group
         self.rect = self.image.get_rect()
 
@@ -313,7 +310,7 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
     def keyboard_event(self, event):  # if keystroke while active
         # if 0-9 are pressed and there is space to type them
         if 47 < event.key < 58 and len(self.parent.__getattribute__(self.var).strip()) < self.length:
-            if int(self.parent.__getattribute__(self.var)+event.unicode) < self.max_value:  # if value is legal
+            if int(self.parent.__getattribute__(self.var) + event.unicode) < self.max_value:  # if value is legal
                 self.parent.__setattr__(self.var,  # update parent var
                                         (self.parent.__getattribute__(self.var).strip() + event.unicode))
                 self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
@@ -323,7 +320,7 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
             try:
                 self.parent.callback()  # quad octet uses callback to update itself when entry is updates
             except:
-                pass  # "raw" entries dont have a callbac class
+                pass  # "raw" entries dont have a callback class
         if event.key == 8:  # if backspace is pressed
             self.parent.__setattr__(self.var, self.parent.__getattribute__(self.var).strip()[0:-1])  # remove last char
             self.image = standard.render(self.parent.__getattribute__(self.var).ljust(self.length, " "), True,
@@ -348,7 +345,7 @@ class QuadOctetEntry(pyg.sprite.Sprite):  # helper class for quad octet based en
             self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
             self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
             self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
-            self.callback()  # call callback to accomodate entries
+            self.callback()  # call callback to accommodate entries
         except:  # if the var doesnt exist
             self.parent.__setattr__(self.var, "...")  # set the var
             self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)  # make entries
@@ -356,21 +353,63 @@ class QuadOctetEntry(pyg.sprite.Sprite):  # helper class for quad octet based en
             self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
             self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
         self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")  # set the image (dots)
-                                     + "." + self.oct3.ljust(3," ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
+                                     + "." + self.oct3.ljust(3, " ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
         super().__init__(group)  # call parent
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.xpos, self.ypos
 
-    def callback(self):  # used to update parent class and accomodate entries
+    def callback(self):  # used to update parent class and accommodate entries
         # combine octets into quad octet
         self.parent.__setattr__(self.var, self.oct1 + "." + self.oct2 + "." + self.oct3 + "." + self.oct4)
         self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")  # redraw
-                                     + "." + self.oct3.ljust(3," ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
+                                     + "." + self.oct3.ljust(3, " ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.xpos, self.ypos
         self.oct2e.rect.x = self.oct1e.rect.x + self.oct1e.rect.width + 6  # cascade spacing along the octets for dots
         self.oct3e.rect.x = self.oct2e.rect.x + self.oct2e.rect.width + 6
         self.oct4e.rect.x = self.oct3e.rect.x + self.oct3e.rect.width + 6
+
+
+class MenuSelector():
+    def __init__(self, items, parent, xpos, ypos, var, subgroup):
+        self.items, self.parent, self.xpos, self.ypos, self.var, self.subgroup \
+            = items, parent, xpos, ypos, var, subgroup
+        try:
+            self.selection = self.parent.__getattribute__(self.var)
+        except:
+            self.selection = []
+        for Y, X in enumerate(self.items):
+            if Y in self.selection:
+                self.Selection(Y, X, self.xpos, self.ypos + (35 * (Y + 1)), self.subgroup, self, True)
+            else:
+                self.Selection(Y, X, self.xpos, self.ypos + (35 * (Y + 1)), self.subgroup, self, False)
+
+    def callback(self):
+        self.parent.__setattr__(self.var, self.selection)
+        print(self.selection)
+
+    class Selection(pyg.sprite.Sprite):
+        def __init__(self, id, lable, xpos, ypos, group, parent, state):
+            self.id, self.lable, self.xpos, self.ypos, self.group, self.parent = id, lable, xpos, ypos, group, parent
+            self.active, self.selected = False, state
+            if self.selected:
+                self.image = standard.render(self.lable, True, (0, 0, 0), (200, 200, 200))
+            else:
+                self.image = standard.render(self.lable, True, (0, 0, 0), (255, 255, 255))
+            self.rect = self.image.get_rect()
+            self.rect.x, self.rect.y = self.xpos, self.ypos
+            super().__init__(group)
+
+        def logical_click(self):
+            if self.selected:
+                self.selected = False
+                self.image = standard.render(self.lable, True, (0, 0, 0), (255, 255, 255))
+                self.parent.selection.remove(self.id)
+            else:
+                self.selected = True
+                self.image = standard.render(self.lable, True, (0, 0, 0), (200, 200, 200))
+                self.parent.selection.append(self.id)
+            self.parent.callback()
 
 
 def draw():
@@ -394,7 +433,7 @@ def draw():
 
 def main():  # main gameloop function
     global campos, speed, toolbox, toolbox_size, state_button, state_button_size, connections, state
-    running = True # set gameloop vars
+    running = True  # set gameloop vars
     dragging = False
     drag_cords = [[0, 0], [0, 0]]
     connections = []
@@ -464,7 +503,7 @@ def main():  # main gameloop function
                         try:
                             [X for X in NICs if X.active][0].active = False  # if holding a wire, stop
                         except IndexError:
-                            pass  # dont crash if not holding a wire
+                            pass  # don't crash if not holding a wire
                 if event.type == pyg.MOUSEBUTTONUP:  # if a mouse button was released
                     if event.button == pyg.BUTTON_LEFT:  # if the left mouse button was released
                         dragging = False  # stop dragging the canvas
@@ -496,8 +535,9 @@ def main():  # main gameloop function
                 if event.type == pyg.MOUSEBUTTONDOWN:  # if a mouse button was pressed
                     if pyg.rect.Rect(state_button_size).collidepoint(event.pos):  # if the state button was pressed
                         state = "physical"  # change state to physical
-                        if holding(): [X for X in clickable if X.active][0].active = False  #  if holding ,drop whatever is held
-                        break  # stop looking for colisions
+                        if holding(): [X for X in clickable if X.active][
+                            0].active = False  # if holding ,drop whatever is held
+                        break  # stop looking for collisions
                     for X in [X for X in NICs] + [X for X in clickable]:  # for the nics and the clickable group
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             try:
@@ -521,16 +561,14 @@ def main():  # main gameloop function
 if __name__ == "__main__":
     campos = [0, 0]  # set camera origin
     speed = 30  # set distance of wasd presses
-
     state = "physical"  # start the game in physical UI mode
     pyg.init()  # initialise pygame
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))  # create the screen object
     clock = pyg.time.Clock()  # create a frameclock object
-    hardware_group = pyg.sprite.Group()  # create sprite groups for the hardware, the hysical menu, the logical menu, clickable elements and NIC's
-    physical_menu = pyg.sprite.Group()
-    logical_menu = pyg.sprite.Group()
-    clickable = pyg.sprite.Group()
-    NICs = pyg.sprite.Group()  # nics need a seperate group to ensure they get click and draw z priority
+    # create sprite groups for the hardware, the physical menu, the logical menu, clickable elements and NIC's
+    hardware_group, physical_menu, logical_menu, clickable, NICs = \
+        pyg.sprite.Group(),  pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group()
+    # nics need a separate group to ensure they get click and draw z priority
     holding = lambda: bool([X for X in [X for X in NICs] + [X for X in clickable] if X.active])
     # function to determine if any instances have the held flag set
     large = pyg.font.SysFont("arial", 40)  # create type objects to use ingame
