@@ -1,5 +1,6 @@
 import pygame as pyg
 import ipaddress
+import math
 
 
 class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
@@ -51,6 +52,9 @@ class Endpoint(Hardware):  # class for endpoint devices
         QuadOctetEntry(self, 20, toolbox_size[1] + 60, "remote_ip", logical_menu, (logical_menu, clickable))
         MenuEntry(self, 5, 20, toolbox_size[1] + 150, "remote_port", (clickable, logical_menu))
 
+    def simulate(self):
+        pass
+
 
 class Server(Hardware):  # class for server devices
     def __init__(self, groups):
@@ -82,6 +86,9 @@ class Server(Hardware):  # class for server devices
         MenuSelector(interfaces, self, 140, toolbox_size[1] + 70, "interfaces_1", (logical_menu, clickable))
         MenuSelector(interfaces, self, 140, toolbox_size[1] + 270, "interfaces_2", (logical_menu, clickable))
         MenuSelector(interfaces, self, 140, toolbox_size[1] + 470, "interfaces_3", (logical_menu, clickable))
+
+    def simulate(self):
+        pass
 
 
 class Switch(Hardware):  # class for switch devices
@@ -115,6 +122,9 @@ class Switch(Hardware):  # class for switch devices
         QuadOctetEntry(self, 20, toolbox_size[1] + 460, "ip_3", logical_menu, (logical_menu, clickable))
         MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 490, logical_menu)
         QuadOctetEntry(self, 20, toolbox_size[1] + 520, "netmask_3", logical_menu, (logical_menu, clickable))
+
+    def simulate(self):
+        pass
 
 
 class Firewall(Hardware):  # class for firewalls
@@ -161,6 +171,8 @@ class Firewall(Hardware):  # class for firewalls
         QuadOctetEntry(self, 20, toolbox_size[1] + 520, "dst_ip_3", logical_menu, (logical_menu, clickable))
         MenuEntry(self, 5, 190, toolbox_size[1] + 520, "internal_port_3", (clickable, logical_menu))
 
+    def simulate(self):
+        pass
 
 class Router(Hardware):  # class for routers
     def __init__(self, groups):
@@ -206,6 +218,9 @@ class Router(Hardware):  # class for routers
                  logical_menu)
         QuadOctetEntry(self, 20, toolbox_size[1] + 610, "int_ip_3", logical_menu, (logical_menu, clickable))
         MenuEntry(self, 5, 180, toolbox_size[1] + 610, "int_port_3", (clickable, logical_menu))
+
+    def simulate(self):
+        pass
 
 
 class Nic(pyg.sprite.Sprite):  # class for NIC's
@@ -411,6 +426,32 @@ class MenuSelector():
                 self.parent.selection.append(self.id)
             self.parent.callback()
 
+class Packet(pyg.sprite.Sprite):
+    def __init__(self, src, dst, i_dst):
+        super().__init__(packets)
+        self.src, self.dst, self.i_src, self.i_dst = src, dst, src, i_dst
+        self.image = pyg.Surface((4, 4))
+        self.image.fill("Blue")
+        self.dist, self.traveling = 0, True
+        src_point = (self.i_src.rect.x + (self.i_src.rect.width / 2) - 2, self.i_src.rect.y + (self.i_src.rect.height / 2) - 2)
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = src_point[0], src_point[1]
+
+    def update(self):
+        if self.traveling:
+            self.dist += packet_speed
+            src_point = (self.i_src.rect.x + (self.i_src.rect.width / 2) - 2, self.i_src.rect.y + (self.i_src.rect.height / 2) - 2)
+            dst_point = (self.i_dst.rect.x + (self.i_dst.rect.width / 2) - 2, self.i_dst.rect.y + (self.i_dst.rect.height / 2) - 2)
+            self.bearing = math.degrees(math.atan2(dst_point[1] - src_point[1], dst_point[0] - src_point[0])) + 270
+            self.rect.x, self.rect.y = src_point[0] - self.dist * math.sin(math.radians(self.bearing)), \
+                                       src_point[1] + self.dist * math.cos(math.radians(self.bearing))
+            if self.rect.colliderect(self.dst.rect):
+                self.traveling = False
+
+
+
+
+
 
 def draw():
     global state
@@ -419,6 +460,7 @@ def draw():
         pyg.draw.line(screen, (0, 0, 0), (X[0].rect.x + 5, X[0].rect.y + 5), (X[1].rect.x + 5, X[1].rect.y + 5), 3)
     hardware_group.draw(screen)  # draw the hardware
     NICs.draw(screen)  # draw the NIC's (need to do separately to ensure they afe drawn over the hardware)
+    packets.draw(screen)  # draw the packets
     screen.blit(toolbox, toolbox_size)  # draw te toolbox
     if state == "physical":  # if in physical mode
         physical_menu.draw(screen)  # draw the menu buttons
@@ -512,6 +554,8 @@ def main():  # main gameloop function
             if dragging:  # if dragging the canvas, move the camera with the mouse
                 campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
                 campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
+            for X in [X for X in hardware_group]: X.simulate()
+            packets.update()
             draw()  # call for the game to draw a frame
 
         toolbox.fill(color=(0, 0, 0, 128))  # clear the toolbox
@@ -555,6 +599,8 @@ def main():  # main gameloop function
             if dragging:  # if dragging the canvas, move the camera with the mouse
                 campos[0] = pyg.mouse.get_pos()[0] + drag_cords[1][0] - drag_cords[0][0]
                 campos[1] = pyg.mouse.get_pos()[1] + drag_cords[1][1] - drag_cords[0][1]
+            for X in [X for X in hardware_group]: X.simulate()
+            packets.update()
             draw()
 
 
@@ -562,12 +608,13 @@ if __name__ == "__main__":
     campos = [0, 0]  # set camera origin
     speed = 30  # set distance of wasd presses
     state = "physical"  # start the game in physical UI mode
+    packet_speed = 1
     pyg.init()  # initialise pygame
     screen = pyg.display.set_mode((0, 0), (pyg.FULLSCREEN | pyg.SRCALPHA))  # create the screen object
     clock = pyg.time.Clock()  # create a frameclock object
     # create sprite groups for the hardware, the physical menu, the logical menu, clickable elements and NIC's
-    hardware_group, physical_menu, logical_menu, clickable, NICs = \
-        pyg.sprite.Group(),  pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group()
+    hardware_group, physical_menu, logical_menu, clickable, NICs, packets = \
+        pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group(), pyg.sprite.Group(),
     # nics need a separate group to ensure they get click and draw z priority
     holding = lambda: bool([X for X in [X for X in NICs] + [X for X in clickable] if X.active])
     # function to determine if any instances have the held flag set
