@@ -1,6 +1,7 @@
 import pygame as pyg
 import ipaddress
 import math
+import time
 
 
 class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the screen
@@ -41,6 +42,7 @@ class Endpoint(Hardware):  # class for endpoint devices
         image = pyg.image.load("endpoint.png")
         Nic(self, -5, 20)
         super().__init__(image, groups)
+        self.last_pkt = 0.0
 
     def logical_click(self):  # if clicked in logical mode
         for X in [X for X in logical_menu]: X.kill()  # clear logical menu
@@ -53,7 +55,9 @@ class Endpoint(Hardware):  # class for endpoint devices
         MenuEntry(self, 5, 20, toolbox_size[1] + 150, "remote_port", (clickable, logical_menu))
 
     def simulate(self):
-        pass
+        if self.last_pkt < time.time() - 1:
+            self.last_pkt = time.time()
+            print("pkt")
 
 
 class Server(Hardware):  # class for server devices
@@ -224,7 +228,8 @@ class Router(Hardware):  # class for routers
 
 
 class Nic(pyg.sprite.Sprite):  # class for NIC's
-    def __init__(self, parent, x_off, y_off, type="physical"):
+    def __init__(self, parent, x_off, y_off):
+        self.ip, self.netmask, self.gateway = "...", "...", "..."
         self.image = pyg.image.load("NIC.png")
         self.parent, self.x_off, self.y_off, self.active, self.type, self.ip = parent, x_off, y_off, False, type, "..."
         super().__init__(NICs)  # create parent class and add to NIC group
@@ -269,7 +274,10 @@ class Nic(pyg.sprite.Sprite):  # class for NIC's
         MenuText(standard.render("Netmask", True, (0, 0, 0)), 20, toolbox_size[1] + 110, logical_menu)
         QuadOctetEntry(self, 20, toolbox_size[1] + 150, "netmask", logical_menu, (logical_menu, clickable))
         MenuText(standard.render("Default gateway", True, (0, 0, 0)), 20, toolbox_size[1] + 200, logical_menu)
-        QuadOctetEntry(self, 20, toolbox_size[1] + 240, "gateway", logical_menu, (logical_menu, clickable))
+        if len([X.gateway for X in NICs if X.parent == self.parent and (X.gateway != "..." and X != self)]) > 0:
+            QuadOctetEntry(self, 20, toolbox_size[1] + 240, "gateway", logical_menu, (logical_menu, clickable), True)
+        else:
+            QuadOctetEntry(self, 20, toolbox_size[1] + 240, "gateway", logical_menu, (logical_menu, clickable))
 
 
 class MenuButton(pyg.sprite.Sprite):  # class for physical menu buttons
@@ -351,27 +359,33 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
 
 
 class QuadOctetEntry(pyg.sprite.Sprite):  # helper class for quad octet based entries
-    def __init__(self, parent, xpos, ypos, var, group, child_group):
-        self.parent, self.xpos, self.ypos, self.var = parent, xpos, ypos, var
-        try:  # test if parent already has var set
-            octs = self.parent.__getattribute__(self.var).strip().split(".")
-            self.oct1, self.oct2, self.oct3, self.oct4 = octs[0], octs[1], octs[2], octs[3]  # load octets
-            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)  # make entries
-            self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
-            self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
-            self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
-            self.callback()  # call callback to accommodate entries
-        except:  # if the var doesnt exist
-            self.parent.__setattr__(self.var, "...")  # set the var
-            self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)  # make entries
-            self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
-            self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
-            self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
-        self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")  # set the image (dots)
-                                     + "." + self.oct3.ljust(3, " ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
-        super().__init__(group)  # call parent
-        self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = self.xpos, self.ypos
+    def __init__(self, parent, xpos, ypos, var, group, child_group, disabled = False):
+        self.parent, self.xpos, self.ypos, self.var, self.disabled = parent, xpos, ypos, var, disabled
+        if disabled:
+            self.image = standard.render("   .   .   .   ", True, (0, 0, 0), (60, 60, 60))
+            super().__init__(group)  # call parent
+            self.rect = self.image.get_rect()
+            self.rect.x, self.rect.y = self.xpos, self.ypos
+        else:
+            try:  # test if parent already has var set
+                octs = self.parent.__getattribute__(self.var).strip().split(".")
+                self.oct1, self.oct2, self.oct3, self.oct4 = octs[0], octs[1], octs[2], octs[3]  # load octets
+                self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)  # make entries
+                self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
+                self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
+                self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
+                self.callback()  # call callback to accommodate entries
+            except:  # if the var doesnt exist
+                self.parent.__setattr__(self.var, "...")  # set the var
+                self.oct1e = MenuEntry(self, 3, self.xpos, self.ypos, "oct1", child_group)  # make entries
+                self.oct2e = MenuEntry(self, 3, self.xpos + 24, self.ypos, "oct2", child_group)
+                self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
+                self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
+            self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")  # set the image (dots)
+                                         + "." + self.oct3.ljust(3, " ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
+            super().__init__(group)  # call parent
+            self.rect = self.image.get_rect()
+            self.rect.x, self.rect.y = self.xpos, self.ypos
 
     def callback(self):  # used to update parent class and accommodate entries
         # combine octets into quad octet
@@ -586,6 +600,7 @@ def main():  # main gameloop function
                         if X.rect.collidepoint(event.pos):  # if it was clicked
                             try:
                                 X.logical_click()  # call the clicked function
+                                break
                             except AttributeError:  # not everything has a logical click function
                                 pass
                     else:  # if nothing was clicked
