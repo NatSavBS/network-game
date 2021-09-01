@@ -8,6 +8,7 @@ class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the scree
     def __init__(self, image, groups):
         self.xpos, self.ypos = pyg.mouse.get_pos()  # set initial position to that of the mouse cursor
         self.active = True  # set the active flag (hardware is held when created)
+        # noinspection PyTypeChecker
         super().__init__(groups)  # initialise the parent class
         self.draw(image)  # call to have the image applied and the rect placed
 
@@ -40,7 +41,7 @@ class Hardware(pyg.sprite.Sprite):  # sprite class for the hardware on the scree
 class Endpoint(Hardware):  # class for endpoint devices
     def __init__(self, groups):
         image = pyg.image.load("endpoint.png")
-        Nic(self, -5, 20)
+        self.interface = Nic(self, -5, 20)
         super().__init__(image, groups)
         self.last_pkt = 0.0
 
@@ -58,6 +59,8 @@ class Endpoint(Hardware):  # class for endpoint devices
         if self.last_pkt < time.time() - 1:
             self.last_pkt = time.time()
             print("pkt")
+            print(connections)
+            print(self.interface.ip)
 
 
 class Server(Hardware):  # class for server devices
@@ -177,6 +180,7 @@ class Firewall(Hardware):  # class for firewalls
 
     def simulate(self):
         pass
+
 
 class Router(Hardware):  # class for routers
     def __init__(self, groups):
@@ -331,6 +335,7 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
                                          (0, 0, 0), (200, 200, 200))  # redraw
 
     def keyboard_event(self, event):  # if keystroke while active
+        print(event.key)
         # if 0-9 are pressed and there is space to type them
         if 47 < event.key < 58 and len(self.parent.__getattribute__(self.var).strip()) < self.length:
             if int(self.parent.__getattribute__(self.var) + event.unicode) < self.max_value:  # if value is legal
@@ -354,12 +359,23 @@ class MenuEntry(pyg.sprite.Sprite):  # class for menu numeric text entries
                 self.parent.callback()
             except:
                 pass
-        if event.key == 27:
+        if event.key == 27: # esc key
             self.logical_click()
+        if event.key == 9:
+            try:
+                self.parent.callback #  test for quad octet
+                self.logical_click()
+                next = self.var[0]
+                for X in [X for X in logical_menu]:
+                    if X.parent == self.parent:
+                        pass #  TODO tab order code
+            except:
+                pass
+
 
 
 class QuadOctetEntry(pyg.sprite.Sprite):  # helper class for quad octet based entries
-    def __init__(self, parent, xpos, ypos, var, group, child_group, disabled = False):
+    def __init__(self, parent, xpos, ypos, var, group, child_group, disabled=False):
         self.parent, self.xpos, self.ypos, self.var, self.disabled = parent, xpos, ypos, var, disabled
         if disabled:
             self.image = standard.render("   .   .   .   ", True, (0, 0, 0), (60, 60, 60))
@@ -382,7 +398,8 @@ class QuadOctetEntry(pyg.sprite.Sprite):  # helper class for quad octet based en
                 self.oct3e = MenuEntry(self, 3, self.xpos + 48, self.ypos, "oct3", child_group)
                 self.oct4e = MenuEntry(self, 3, self.xpos + 72, self.ypos, "oct4", child_group)
             self.image = standard.render(self.oct1.ljust(3, " ") + "." + self.oct2.ljust(3, " ")  # set the image (dots)
-                                         + "." + self.oct3.ljust(3, " ") + "." + self.oct4.ljust(3, " "), True, (0, 0, 0))
+                                         + "." + self.oct3.ljust(3, " ") + "." + self.oct4.ljust(3, " "), True,
+                                         (0, 0, 0))
             super().__init__(group)  # call parent
             self.rect = self.image.get_rect()
             self.rect.x, self.rect.y = self.xpos, self.ypos
@@ -399,7 +416,7 @@ class QuadOctetEntry(pyg.sprite.Sprite):  # helper class for quad octet based en
         self.oct4e.rect.x = self.oct3e.rect.x + self.oct3e.rect.width + 6
 
 
-class MenuSelector():
+class MenuSelector:
     def __init__(self, items, parent, xpos, ypos, var, subgroup):
         self.items, self.parent, self.xpos, self.ypos, self.var, self.subgroup \
             = items, parent, xpos, ypos, var, subgroup
@@ -440,31 +457,31 @@ class MenuSelector():
                 self.parent.selection.append(self.id)
             self.parent.callback()
 
+
 class Packet(pyg.sprite.Sprite):
     def __init__(self, src, dst, i_dst):
         super().__init__(packets)
-        self.src, self.dst, self.i_src, self.i_dst = src, dst, src, i_dst
+        self.src, self.dst, self.i_src, self.i_dst, self.bearing = src, dst, src, i_dst, 0
         self.image = pyg.Surface((4, 4))
         self.image.fill("Blue")
         self.dist, self.traveling = 0, True
-        src_point = (self.i_src.rect.x + (self.i_src.rect.width / 2) - 2, self.i_src.rect.y + (self.i_src.rect.height / 2) - 2)
+        src_point = (
+        self.i_src.rect.x + (self.i_src.rect.width / 2) - 2, self.i_src.rect.y + (self.i_src.rect.height / 2) - 2)
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = src_point[0], src_point[1]
 
     def update(self):
         if self.traveling:
             self.dist += packet_speed
-            src_point = (self.i_src.rect.x + (self.i_src.rect.width / 2) - 2, self.i_src.rect.y + (self.i_src.rect.height / 2) - 2)
-            dst_point = (self.i_dst.rect.x + (self.i_dst.rect.width / 2) - 2, self.i_dst.rect.y + (self.i_dst.rect.height / 2) - 2)
+            src_point = (
+            self.i_src.rect.x + (self.i_src.rect.width / 2) - 2, self.i_src.rect.y + (self.i_src.rect.height / 2) - 2)
+            dst_point = (
+            self.i_dst.rect.x + (self.i_dst.rect.width / 2) - 2, self.i_dst.rect.y + (self.i_dst.rect.height / 2) - 2)
             self.bearing = math.degrees(math.atan2(dst_point[1] - src_point[1], dst_point[0] - src_point[0])) + 270
             self.rect.x, self.rect.y = src_point[0] - self.dist * math.sin(math.radians(self.bearing)), \
                                        src_point[1] + self.dist * math.cos(math.radians(self.bearing))
             if self.rect.colliderect(self.dst.rect):
                 self.traveling = False
-
-
-
-
 
 
 def draw():
